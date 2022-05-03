@@ -3,10 +3,10 @@ Repo for the global distribution and drivers of the aesthetic value of reef fish
 
 # Content
 
-:file_folder:[data](/data) contains .csv and .RData files of data
+:file_folder:[data](/data) contains raw data files that should not be modified
 
-:file_folder:[scripts](/analyses) contains scripts for analyses
+:file_folder:[scripts](/scripts) contains R scripts for running analyses
 
-:file_folder:[outputs](/outputs) contains all the results stored in .rds
+:file_folder:[outputs](/outputs) contains outputs and results stored as .Rdata, .rds, etc.
 
-:file_folder:[figures](/figures) contains all figures made for this project
+:file_folder:[figures](/figures) contains figures created during analyses
