@@ -1,7 +1,7 @@
 # aesthetic_value
 Repo for the global distribution and drivers of the aesthetic value of reef fish communities
 
-# Content
+# content
 
 :file_folder:[data](/data) contains raw data files that should not be modified
 
