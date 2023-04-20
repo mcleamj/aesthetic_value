@@ -1,5 +1,7 @@
-# aesthetic_value
-Repo for the global distribution and drivers of the aesthetic value of reef fish communities
+# RLS_Aesthetic_value
+Research compendium to reproduce analyses and figures of the following article: "XXX" Mouquet, McLean et al. Submitted to XX.
+
+
 
 ## content
 
@@ -9,9 +11,14 @@ Repo for the global distribution and drivers of the aesthetic value of reef fish
 
 :file_folder:[outputs](/outputs) contains outputs and results stored as .Rdata, .rds, etc.
 
-:file_folder:[figures](/figures) contains figures created during analyses
+:file_folder:[figures_tables](/figures_tables) contains figures and table created during analyses
 
 :file_folder:[R](/R) contains functions created during analyses
+
+## Figures 
+The following Figures and Tables can be reproduced with the script indicated in brackets (all in `script/`):
+
+
 
 ## Usage
 
