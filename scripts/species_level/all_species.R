@@ -6,6 +6,7 @@
 #'         Nicolas Mouquet , \email{nicolas.mouquet@@cnrs.fr},
 #'
 #'  Produce the file all_species.csv with all species aesthe scores and classification   
+#'  Produce FIG_1.png
 #'         
 #' @date 2022/04/20
 ##################################################################################################
@@ -13,10 +14,10 @@
 
 #Get species list with esthe scores 
 
-  esthe_table <- read.csv(here::here("data", "esthe_table.csv"))
-  esthe_table$sp_name <- as.character(gsub("_"," ",esthe_table$sp_name))
+  aesthe_table <- read.csv(here::here("data", "aesthe_table.csv"))
+  aesthe_table$sp_name <- as.character(gsub("_"," ",aesthe_table$sp_name))
   
-  esthe_table <- esthe_table[!duplicated(esthe_table$sp_name), ] #remove duplicates if any
+  aesthe_table <- aesthe_table[!duplicated(aesthe_table$sp_name), ] #remove duplicates if any
   
 #Get the classification from taxsize
 
@@ -63,19 +64,51 @@
     A
   }
   
-  classif       <- get_classif(esthe_table$sp_name)
+  classif       <- get_classif(aesthe_table$sp_name)
   colnames(classif) <- c("sp_name", colnames(classif[-1]))
   classif <- classif[,-dim(classif)[2]]
   
   ## Scaridae is a subfamily of the Labridae (F. Leprieur personal comment)
     classif$family[classif$family == "Scaridae"] <- "Labridae"
 
-#merge and save 
+
+# Compute the aesthe contribution of each species
+  # with parameters from Tribot, A.S, Deter, J., Claverie, T., Guillhaumon, F., Villeger, S., & Mouquet, N. (2019). Species diversity and composition drive the aesthetic value of coral reef fish assemblages. Biology letters, 15, 20190703, doi:10.1098/rsbl.2019.0703
+  # positive and negative effect are relative to the espected effect computed with the species 
+    
+  ## Computing the aesthe_effect
+    aesthe_table$aesthe_effect <- (log(aesthe_table$esthe_score) - 7.3468679)/7.937672
   
-  species_table     <- merge(esthe_table, classif, by = "sp_name")  
+#merge & save 
   
-  write.csv(x = species_table, file = here::here("output", "all_species.csv"),
+  all_species <- merge(aesthe_table, classif, by = "sp_name")  
+  write.csv(x = all_species, file = here::here("outputs", "all_species.csv"),
             row.names = FALSE)
+  
+#FIG 1
+  
+  library(ggplot2)
+  
+  all_species$rank <- rank(all_species$aesthe_effect)
+  
+  nneg <- sum(all_species$aesthe_effect < 0) # 1805 species have a negative effect
+  npos <- sum(all_species$aesthe_effect > 0) # 656 species have a positive effect
+  
+  Fig_1 <- ggplot(all_species, ggplot2::aes(y=aesthe_effect,x = rank)) +
+    geom_point(col="royalblue1",alpha=0.5)+
+    theme_bw()+
+    xlab("Ranks") + ylab("Net species aesthetic effects")+
+    ylim(-0.04,0.04)+
+    geom_hline(yintercept=0, linetype="dashed", 
+               color = "gray", size=1)+
+    geom_vline(xintercept=nneg, linetype="dashed", 
+               color = "gray", size=1)+
+    geom_text(x=100, y=-0.003, label=paste("n=",nneg),size=4,col="gray")+
+    geom_text(x=2400, y=+0.003, label=paste("n=",npos),size=4,col="gray")
+  
+  ggsave(here::here("figures_tables","fig_1.png"), plot = Fig_1,
+         width = 10, height = 5, dpi = 300, units = "in", device='png')
+  
 
 
 

@@ -1,8 +1,6 @@
 # RLS_Aesthetic_value
 Research compendium to reproduce analyses and figures of the following article: "XXX" Mouquet, McLean et al. Submitted to XX.
 
-
-
 ## content
 
 :file_folder:[data](/data) contains raw data files that should not be modified
@@ -16,13 +14,14 @@ Research compendium to reproduce analyses and figures of the following article: 
 :file_folder:[R](/R) contains functions created during analyses
 
 ## Figures 
-The following Figures and Tables can be reproduced with the script indicated in brackets (all in `script/`):
-
-
+  The following Figures and Tables can be reproduced with the script indicated in brackets (all in `script/`):
+  
+  FIG_1.png is in `species_level/all_species.R`
+  FIG_2.png is in `survey_level/survey_metrics.R`
 
 ## Usage
 
-Clone the repository and run this command in R/RStudio:
+  Clone the repository and run this command in R/RStudio:
 
 ```r 
 source("make.R")

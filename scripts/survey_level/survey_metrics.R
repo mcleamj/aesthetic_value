@@ -5,11 +5,11 @@
 #'         Juliette Langlois, \email{juliette.a.langlois@@gmail.com},
 #'         Nicolas Mouquet , \email{nicolas.mouquet@@cnrs.fr},
 #' 
-#' Produce the file survey_aesth.csv which contains predicted aesthetic values for each survey   
+#' Produce the file survey_aesth.csv which contains predicted aesthetic values for each survey 
+#' Produce FIG_2.png  
 #'        
 #' @date 2022/06/22
 ##################################################################################################
-
 
 rm(list = ls())
 
@@ -28,26 +28,6 @@ rm(list = ls())
 # ----
     
 # COMPUTE AESTHETICS ----
-    
-# Compute the aesthe contribution of each species
-# with parameters from Tribot, A.S, Deter, J., Claverie, T., Guillhaumon, F., Villeger, S., & Mouquet, N. (2019). Species diversity and composition drive the aesthetic value of coral reef fish assemblages. Biology letters, 15, 20190703, doi:10.1098/rsbl.2019.0703
-    
-    ## Computing the aesthe_effect
-      all_species$aesthe_effect <- (log(all_species$esthe_score) - 7.3468679)/7.937672
-    
-    ## plot
-      plot(all_species$aesthe_effect[order(all_species$esthe_score)], type="l")
-      abline(v = mean(all_species$esthe_score))
-      abline(h = 0)
-
-    ## check how many species with negative/positive effect on the score
-    ## positive and negative effect are relative to the espected effect computed with the species 
-    ## richness of assemblages in Tribot et al 2019.
-      sum(all_species$aesthe_effect < 0) # 1805 species have a negative effect
-      sum(all_species$aesthe_effect > 0) # 656 species have a positive effect
-
-      
-# Compute the survey aesthe  
   #aesthe_survey : predicted aesthe 
   #aesthe_SR_survey : predicted aesthe based only on species richness
       
@@ -100,56 +80,32 @@ rm(list = ls())
       
   ##add the ranks and the diff in aesthetic (between aesthe_survey and aesthe_SR_survey)
     survey_aesth$rank <- rank(survey_aesth$aesthe_survey)
-    survey_aesth$ecart_richness <- survey_aesth$aesthe_survey - survey_aesth$aesthe_SR_survey
+    #survey_aesth$ecart_richness <- survey_aesth$aesthe_survey - survey_aesth$aesthe_SR_survey
     
   ##isolate two survey with same number of species but high and low aesthetic scores
-  ##will be used in fig.1b and c 
-    
-    
-    
+  ##will be used in fig.2a and b
+
     temp  <- survey_aesth[which(survey_aesth$aesthe_survey > 3500),]
     temp  <- temp[which(temp$aesthe_survey < 3600),]
     temp  <- temp[which(temp$nb_species ==40),]
     upsc <- temp[, c("SurveyID", "aesthe_survey", "nb_species")]
-    lowsc <- lowsc[1,]
+    upsc <- upsc[1,]
     
-    temp <- survey_aesth[which(survey_aesth$nb_species == lowsc$nb_species),]
+    temp <- survey_aesth[which(survey_aesth$nb_species == upsc$nb_species),]
     lowsc <- temp[which(temp$aesthe_survey == min(temp$aesthe_survey)), c("SurveyID", "aesthe_survey", "nb_species")]
-    
-  ##Fig 1.a
-    library(ggplot2)
-    
-      all_species$aesthe_effect <- (log(all_species$esthe_score) - 7.3468679)/7.937672
-      all_species$rank <- rank(all_species$aesthe_effect)
-    
-      nneg <- sum(all_species$aesthe_effect < 0) # 1805 species have a negative effect
-      npos <- sum(all_species$aesthe_effect > 0) # 656 species have a positive effect
+   
+  ##FIG_2a
       
-      A <- ggplot(all_species, ggplot2::aes(y=aesthe_effect,x = rank)) +
-        geom_point(col="royalblue1",alpha=0.5)+
-        theme_bw()+
-        xlab("Ranks") + ylab("Species aesthetic effects")+
-        geom_hline(yintercept=0, linetype="dashed", 
-                   color = "gray", size=1)+
-        geom_vline(xintercept=nneg, linetype="dashed", 
-                   color = "gray", size=1)+
-        geom_text(x=100, y=-0.003, label=paste("n=",nneg),size=4,col="gray")+
-        geom_text(x=2400, y=+0.003, label=paste("n=",npos),size=4,col="gray")
-      
-      
-  ##Fig 1.b
-      
-      B <- ggplot(survey_aesth, ggplot2::aes(y=aesthe_survey,x = nb_species)) +
+      a <- ggplot(survey_aesth, ggplot2::aes(y=aesthe_survey,x = nb_species)) +
         geom_point(col="royalblue1",alpha=0.5) +
         theme_bw()+
-        xlim(0,140)+
         geom_line(aes(y = aesthe_SR_survey, x = nb_species),col = "tomato")+
         labs(x = "Number of species in the survey",
              y = "Predicted aesthetic score")+
         geom_point(aes(x=lowsc$nb_species,y=lowsc$aesthe_survey),colour="tomato",size=3)+
         geom_point(aes(x=upsc$nb_species,y=upsc$aesthe_survey),colour="tomato",size=3)
 
-  ##Fig 1.c 
+  ##FIG_2b 
           
       sp_pres <- as.data.frame(sp_pres_matrix)
       rownames(sp_pres)=sp_pres$SurveyID
@@ -166,7 +122,7 @@ rm(list = ls())
           
       comp_surv <- rbind(low_sc_effect, high_sc_effect)
       
-      C <- ggplot(comp_surv, aes(x = score_type, y = effect))+
+      b <- ggplot(comp_surv, aes(x = score_type, y = effect))+
         geom_boxplot(fill="white",width = .5, outlier.shape = NA) + 
         ylab("Species aesthetic effects") +
         xlab("Survey")+
@@ -180,44 +136,12 @@ rm(list = ls())
         scale_x_discrete(labels = c("High", "Low"))+
         ggplot2::theme(axis.line.x  = ggplot2::element_line(linetype = "blank"),
                        axis.ticks.x = ggplot2::element_blank())
-          
-    ##Fig 1.d
-      
-      mxasc  <- survey_aesth[which(survey_aesth$aesthe_survey == max(survey_aesth$aesthe_survey)),]
-      sp_mxasc <- colnames(sp_pres)[sp_pres[which(rownames(sp_pres)%in%mxasc$SurveyID),]>0]
-      mxasc_sc_effect  <-  cbind.data.frame(effect=all_species$aesthe_effect[which(all_species$sp_name %in% gsub("_"," ",sp_mxasc))])
-      mxasc_sc_effect$score_type  <- "max aesthe"
-      
-      
-      mxsrsc  <- survey_aesth[which(survey_aesth$nb_species ==       survey_aesth$nb_species[order(survey_aesth$nb_species,decreasing = TRUE)][2],]
-      sp_mxsrsc <- colnames(sp_pres)[sp_pres[which(rownames(sp_pres)%in%mxsrsc$SurveyID),]>0]
-      mxsrsc_sc_effect  <-  cbind.data.frame(effect=all_species$aesthe_effect[which(all_species$sp_name %in% gsub("_"," ",sp_mxsrsc))])
-      mxsrsc_sc_effect$score_type  <- "max sr"
-      
-      comp_surv2 <- rbind(mxasc_sc_effect, mxsrsc_sc_effect)
-      
-      
-      D <- ggplot(comp_surv2, aes(x = score_type, y = effect))+
-        geom_boxplot(fill="white",width = .5, outlier.shape = NA) + 
-        ylab("Species aesthetic effects") +
-        xlab("Survey")+
-        theme_bw()+
-        ggdist::stat_halfeye(adjust = .5,width = .6,.width = 0,
-                             justification = -.3,alpha = .2,fill='blue',point_colour = NA)+
-        geom_point(size = 1,alpha = .2,col="blue",
-                   position = position_jitter(seed = 1, width = .1)) +
-        geom_hline(yintercept=0, linetype="dashed", 
-                   color = "gray", size=1)+
-        scale_x_discrete(labels = c("Max aesthe", "Max richness"))+
-        ggplot2::theme(axis.line.x  = ggplot2::element_line(linetype = "blank"),
-                       axis.ticks.x = ggplot2::element_blank())
-      
-    
+
     ##Assemble and save 
       
-    fig_1 <- gridExtra::arrangeGrob(A,B,C,D,ncol=2)
-    ggsave(here::here("figures_tables","fig_1.png"), plot = fig_1,
-             width = 12, height = 9, dpi = 300, units = "in", device='png')
+    fig_2 <- gridExtra::arrangeGrob(a,b,ncol=2)
+    ggsave(here::here("figures_tables","fig_2.png"), plot = fig_2,
+             width = 10, height = 4.5, dpi = 300, units = "in", device='png')
       
 # ----     
 
