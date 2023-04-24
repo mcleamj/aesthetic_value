@@ -73,7 +73,7 @@ rm(list = ls())
 
 # ---- 
       
-# PLOT THE FIGURE 1 ----
+#FIGURE 2 ----
  
   all_species <- read.csv(here::here("outputs", "all_species.csv"))
   survey_aesth <- read.csv(here::here("outputs", "survey_aesth.csv"))
@@ -99,11 +99,19 @@ rm(list = ls())
       a <- ggplot(survey_aesth, ggplot2::aes(y=aesthe_survey,x = nb_species)) +
         geom_point(col="royalblue1",alpha=0.5) +
         theme_bw()+
-        geom_line(aes(y = aesthe_SR_survey, x = nb_species),col = "tomato")+
+        theme(axis.text.x = element_text(size = 10),
+              axis.title.x = element_text(size = 14),
+              axis.text.y = element_text(size = 10),
+              axis.title.y = element_text(size = 14))+
+        geom_line(aes(y = aesthe_SR_survey, x = nb_species),col = "#7D7D7C",size=1.5)+
+        geom_line(aes(y = aesthe_SR_survey, x = nb_species),col = "white",size=0.5)+
         labs(x = "Number of species in the survey",
              y = "Predicted aesthetic score")+
         geom_point(aes(x=lowsc$nb_species,y=lowsc$aesthe_survey),colour="tomato",size=3)+
-        geom_point(aes(x=upsc$nb_species,y=upsc$aesthe_survey),colour="tomato",size=3)
+        geom_point(aes(x=upsc$nb_species,y=upsc$aesthe_survey),colour="tomato",size=3)+
+        geom_text(x=48.5, y=lowsc$aesthe_survey, label="low",size=4,col="#7D7D7C")+
+        geom_text(x=31.5, y=upsc$aesthe_survey, label="high",size=4,col="#7D7D7C")
+        
 
   ##FIG_2b 
           
@@ -127,6 +135,11 @@ rm(list = ls())
         ylab("Species aesthetic effects") +
         xlab("Survey")+
         theme_bw()+
+        theme(axis.text.x = element_text(size = 10),
+              axis.title.x = element_text(size = 14),
+              axis.text.y = element_text(size = 10),
+              axis.title.y = element_text(size = 14))+
+        ylim(-0.04,0.04)+
         ggdist::stat_halfeye(adjust = .5,width = .6,.width = 0,
           justification = -.3,alpha = .2,fill='blue',point_colour = NA)+
         geom_point(size = 1,alpha = .2,col="blue",
@@ -144,48 +157,8 @@ rm(list = ls())
              width = 10, height = 4.5, dpi = 300, units = "in", device='png')
       
 # ----     
-
-      
-      
-      
-      
-      
-      # -----
-      
-      # Violin plot of two stations with same nb sp ----
-      
+ 
+  
     
-      ggplot2::ggsave(plot = survey_violin,
-                      filename = here::here("results", "01_violin_esthval_sprich.pdf"), 
-                      height = 18, width = 18, units = "cm", dpi = 320)
-      
-      # ----
-      
-      # Distribution of the aesthetic value of the surveys ----
-      survey_esth <- read.csv(here::here("results", "01_survey_table_esth.csv"))
-      densplot    <- 
-        ggplot2::ggplot(survey_esth, ggplot2::aes(x = esth)) +
-        ggplot2::geom_density(alpha = 0.7,
-                              fill = viridis::viridis(1, alpha = 0.5, begin = 0.4, end = 0.6),
-                              color = viridis::viridis(1, alpha = 0.5, begin = 0.4, end = 0.6)) + 
-        ggplot2::theme_light() + 
-        ggplot2::xlab("Aesthetic values") + 
-        ggplot2::ylab("Density")  +
-        ggplot2::scale_x_continuous(breaks = c(1000, 2000, 3000, 4000)) + 
-        ggplot2::theme(axis.title      = ggplot2::element_text(size = 14, family = "serif"),
-                       axis.text       = ggplot2::element_text(size = 9, family = "serif"), 
-                       panel.grid      = ggplot2::element_blank(),
-                       legend.position = "none")
-      # save
-      ggplot2::ggsave(plot = densplot,
-                      filename = here::here("results", "01_survey_density_esth.pdf"), 
-                      height = 18, width = 18, units = "cm", dpi = 320)
-      
-      # ----
-      
-      rm(comp_surv, data_commu, densplot, effect_sp, high_sc_effect, low_sc_effect, lowsc, plot,
-         species_effect, species_table, survey_compo, survey_esth, survey_table, 
-         survey_violin, upsc, intercept_sr, slope_sr, sp_lowsc, sp_upsc)
-      
-      
-      
+        
+  
