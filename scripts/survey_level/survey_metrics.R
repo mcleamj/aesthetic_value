@@ -24,7 +24,7 @@ library(ggplot2)
     
   #load the files 
     
-    all_species <- read.csv(here::here("outputs", "all_species.csv"))
+    aesthe_species <- read.csv2(here::here("outputs", "aesthe_species.csv"))
     sp_pres_matrix <- readRDS(here::here("outputs", "sp_pres_matrix.rds"))
     
 # ----
@@ -35,8 +35,7 @@ library(ggplot2)
       
       surveyid_vect <- as.character(sp_pres_matrix$SurveyID)  
       
-      survey_aesth <- do.call(rbind, 
-                              pbmcapply::pbmclapply((1:length(surveyid_vect)), function(i){   #
+      survey_aesth <- do.call(rbind, pbmcapply::pbmclapply((1:length(surveyid_vect)), function(i){   #
 
                                 #i=1
                                 survey_id <-  surveyid_vect[i]
@@ -53,7 +52,7 @@ library(ggplot2)
                                 nb_species <- length(sp_survey)
                                 
                                # aesthe of the survey
-                                E <- intercept_sr + slope_sr * log(nb_species) + sum(all_species$aesthe_effect[all_species$sp_name %in%  gsub("_"," ",sp_survey)])
+                                E <- intercept_sr + slope_sr * log(nb_species) + sum(aesthe_species$aesthe_effect[aesthe_species$sp_name %in%  gsub("_"," ",sp_survey)])
                                 score <-  exp(E)
 
                                 E <-  intercept_sr + slope_sr * log(nb_species)
@@ -61,14 +60,15 @@ library(ggplot2)
                                 
                               # compute the number of species with positive and negative effect in each survey
                                 
-                                vect  <-  (all_species$aesthe_effect * vector_abs_pres)
+                                vect  <-  (aesthe_species$aesthe_effect * vector_abs_pres)
                                 nb_sp_pos_survey   <-  length(which(vect>0))
                                 nb_sp_neg_survey   <-  length(which(vect<0))
                                 
                                 cbind.data.frame(SurveyID=surveyid_vect[i],nb_species=nb_species,aesthe_survey=score,aesthe_SR_survey=score_SR,
                                                  nb_sp_pos_survey=nb_sp_pos_survey, nb_sp_neg_survey=nb_sp_neg_survey)
 
-                             }, mc.cores = 10))
+                             }, mc.cores = parallel::detectCores()-1))
+      
       plot(survey_aesth$nb_species,survey_aesth$aesthe_survey)
       
       write.csv(survey_aesth, here::here("outputs", "survey_aesth.csv"), row.names = FALSE)
@@ -77,16 +77,16 @@ library(ggplot2)
       
 #FIGURE 1 ----
  
-  all_species <- read.csv(here::here("outputs", "all_species.csv"))
+  aesthe_species <- read.csv(here::here("outputs", "aesthe_species.csv"))
   survey_aesth <- read.csv(here::here("outputs", "survey_aesth.csv"))
   sp_pres_matrix <- readRDS(here::here("outputs", "sp_pres_matrix.rds"))
   
   #FIG 1 a 
   
-    all_species$rank <- rank(all_species$aesthe_effect)
+  aesthe_species$rank <- rank(aesthe_species$aesthe_effect)
   
-    nneg <- sum(all_species$aesthe_effect < 0) # 1805 species have a negative effect
-    npos <- sum(all_species$aesthe_effect > 0) # 656 species have a positive effect
+    nneg <- sum(aesthe_species$aesthe_effect < 0) # 1763 species have a negative effect
+    npos <- sum(aesthe_species$aesthe_effect > 0) # 654 species have a positive effect
     
     ex <- c("Chaetodontoplus septentrionalis","Calloplesiops altivelis","Paracanthurus hepatus",
             "Chelmonops curiosus","Acanthurus blochii","Scarus rivulatus","Pseudolabrus guentheri",
@@ -101,7 +101,7 @@ library(ggplot2)
                "Pseudolabrus_guentheri_A_2.png","Scolopsis_ghanam_A_3.png","Sarpa_salpa_A_2.png",
                "Salmo_salar_A_2.png","Arripis_truttacea_A_1.png","Sardina_pilchardus_A_1.png")
   
-    a <- ggplot(all_species, ggplot2::aes(y=aesthe_effect,x = rank)) +
+    a <- ggplot(aesthe_species, ggplot2::aes(y=aesthe_effect,x = rank)) +
       geom_point(col="royalblue1",alpha=0.5)+
       theme_bw()+
       xlab("Ranks") + ylab("Net species aesthetic effects")+
@@ -119,74 +119,74 @@ library(ggplot2)
       geom_point(aes(x=rank[sp_name%in%ex[1]],
                      y=aesthe_effect[sp_name%in%ex[1]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[1]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[1]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[1]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[1]], 
                 label="1",size=font_cr,col=colsp)+
       geom_point(aes(x=rank[sp_name%in%ex[2]],
                      y=aesthe_effect[sp_name%in%ex[2]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[2]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[2]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[2]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[2]], 
                 label="2",size=font_cr,col=colsp)+
       geom_point(aes(x=rank[sp_name%in%ex[3]],
                      y=aesthe_effect[sp_name%in%ex[3]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[3]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[3]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[3]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[3]], 
                 label="3",size=font_cr,col=colsp)+
       geom_point(aes(x=rank[sp_name%in%ex[4]],
                      y=aesthe_effect[sp_name%in%ex[4]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[4]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[4]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[4]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[4]], 
                 label="4",size=font_cr,col=colsp)+
       geom_point(aes(x=rank[sp_name%in%ex[5]],
                      y=aesthe_effect[sp_name%in%ex[5]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[5]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[5]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[5]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[5]], 
                 label="5",size=font_cr,col=colsp)+
       geom_point(aes(x=rank[sp_name%in%ex[6]],
                      y=aesthe_effect[sp_name%in%ex[6]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[6]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[6]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[6]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[6]], 
                 label="6",size=font_cr,col=colsp)+
       geom_point(aes(x=rank[sp_name%in%ex[7]],
                      y=aesthe_effect[sp_name%in%ex[7]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[7]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[7]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[7]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[7]], 
                 label="7",size=font_cr,col=colsp)+
       geom_point(aes(x=rank[sp_name%in%ex[8]],
                      y=aesthe_effect[sp_name%in%ex[8]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[8]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[8]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[8]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[8]], 
                 label="8",size=font_cr,col=colsp)+
       geom_point(aes(x=rank[sp_name%in%ex[9]],
                      y=aesthe_effect[sp_name%in%ex[9]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[9]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[9]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[9]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[9]], 
                 label="9",size=font_cr,col=colsp)+
       geom_point(aes(x=rank[sp_name%in%ex[10]],
                      y=aesthe_effect[sp_name%in%ex[10]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[10]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[10]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[10]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[10]], 
                 label="10",size=font_cr,col=colsp)+
       geom_point(aes(x=rank[sp_name%in%ex[11]],
                      y=aesthe_effect[sp_name%in%ex[11]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[11]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[11]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[11]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[11]], 
                 label="11",size=font_cr,col=colsp)+
       geom_point(aes(x=rank[sp_name%in%ex[12]],
                      y=aesthe_effect[sp_name%in%ex[12]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=all_species$rank[all_species$sp_name%in%ex[12]], 
-                y=all_species$aesthe_effect[all_species$sp_name%in%ex[12]], 
+      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[12]], 
+                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[12]], 
                 label="12",size=font_cr,col=colsp)
     
   
@@ -236,8 +236,8 @@ library(ggplot2)
       sp_lowsc <- colnames(sp_pres)[sp_pres[which(rownames(sp_pres)%in%lowsc$SurveyID),]>0]
       sp_upsc <- colnames(sp_pres)[sp_pres[which(rownames(sp_pres)%in%upsc$SurveyID),]>0]
       
-      low_sc_effect  <-  cbind.data.frame(effect=all_species$aesthe_effect[which(all_species$sp_name %in% gsub("_"," ",sp_lowsc))])
-      high_sc_effect <-  cbind.data.frame(effect=all_species$aesthe_effect[which(all_species$sp_name %in% gsub("_"," ",sp_upsc))])
+      low_sc_effect  <-  cbind.data.frame(effect=aesthe_species$aesthe_effect[which(aesthe_species$sp_name %in% gsub("_"," ",sp_lowsc))])
+      high_sc_effect <-  cbind.data.frame(effect=aesthe_species$aesthe_effect[which(aesthe_species$sp_name %in% gsub("_"," ",sp_upsc))])
           
       low_sc_effect$score_type  <- "low"
       high_sc_effect$score_type <- "high"
