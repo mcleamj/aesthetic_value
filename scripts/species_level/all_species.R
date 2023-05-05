@@ -1,12 +1,11 @@
 ###################################################################################################
 #'  Set up the main datafile with esthe scores and classification from taxsize
 #'
+#' @author Nicolas Mouquet , \email{nicolas.mouquet@@cnrs.fr}
 #' @author Matthew McLean, \email {mcleamj@@gmail.com},
-#'         Juliette Langlois, \email{juliette.a.langlois@@gmail.com},
-#'         Nicolas Mouquet , \email{nicolas.mouquet@@cnrs.fr},
+#' @author Juliette Langlois, \email{juliette.a.langlois@@gmail.com}
 #'
 #'  Produce the file all_species.csv with all species aesthe scores and classification   
-#'  Produce FIG_1.png
 #'         
 #' @date 2022/04/20
 ##################################################################################################
