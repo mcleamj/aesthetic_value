@@ -1,5 +1,9 @@
 # RLS_Aesthetic_value
-Research compendium to reproduce analyses and figures of the following article: "XXX" Mouquet, McLean et al. Submitted to XX.
+Research compendium to reproduce analyses and figures of the following article: "XXX" McLean et al. & Mouquet Submitted to XX.
+
+ms : https://docs.google.com/document/d/1gE_Z4GQoFHjzEu0WmANyfg5s1eBWuYOTKFAO3kYfxmY/edit#
+supmat: https://docs.google.com/document/d/18sS0vOqeFM_fM3VgSM2i-P693Ey9xNt_jW1McoKyZew/edit
+figures: https://docs.google.com/document/d/1r4qGwa2xJKDPo24HSP9H05pNCAT_VrS4sW-Qk_q5BZg/edit
 
 ## content
 
