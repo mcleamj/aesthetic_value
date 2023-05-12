@@ -5,7 +5,7 @@
 #' @author Matthew McLean, \email {mcleamj@@gmail.com},
 #' @author Juliette Langlois, \email{juliette.a.langlois@@gmail.com}
 #'
-#'  Produce the file aesthe_species.csv with all species aesthe scores and classification   
+#'  Produce the file aesthe_species.csv with all species aesthe scores and classification taxo
 #'         
 #' @date 2022/04/20
 ##################################################################################################

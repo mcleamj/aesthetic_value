@@ -22,14 +22,5 @@ figures: https://docs.google.com/document/d/1r4qGwa2xJKDPo24HSP9H05pNCAT_VrS4sW-
   
   FIG_1.png is in `survey_level/survey_metrics.R`
 
-## Usage
-
-  Clone the repository and run this command in R/RStudio:
-
-```r 
-source("make.R")
-```
-All required packages will be installed (if necessary) and loaded.
-> :boom: WARNING: running `make.R` calls all the scripts and takes days so if you want to work on one or a few scripts, you should run lines XX-XX of `make.R` and then go to the other script.
 
 Enjoy!
