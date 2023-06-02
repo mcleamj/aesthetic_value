@@ -5,7 +5,6 @@
 #' @author Ella Clausius \email {ella.clausius@@utas.edu.au}
 #'         Matthew McLean, \email {mcleamj@@gmail.com}
 #' 
-
 #########################################################################################################
 
 library(sf)
@@ -14,6 +13,7 @@ library(geosphere)
 library(plot3D)
 library(mapproj)
 library(pals)
+library(readr)
 library(dplyr)
 
 ################################################
@@ -35,11 +35,14 @@ aesth_site <- aesth_survey %>%
 
 aesth_site$log_aesth <- log(aesth_site$aesthe_survey) # CREATE LOG-TRANSFORMED VERSION OF DATA
 
-scatter2D(aesth_site$SiteLongitude, aesth_site$SiteLatitude, pch=19,
-          colvar = aesth_site$log_aesth)
+scatter2D(aesth_site$SiteLongitude, aesth_site$SiteLatitude, pch=19, # QUICK MAP
+          colvar = aesth_site$log_aesth, cex=0)
+map(database = "world", border=NA, fill=T, col="grey", add=T)
+scatter2D(aesth_site$SiteLongitude, aesth_site$SiteLatitude, pch=19, # QUICK MAP
+          colvar = aesth_site$log_aesth, add=T)
 
 res <- c(1000, 1000) #resolution of map x, y
-my_buffer <- 150*1000 # The size of the buffers around the points in metres
+my_buffer <- 150*1000 # The size of the buffers around the points in meters
 p <- 1.6 #power for IDW 
 #lower values mean its more influenced by distances further away
 # higher values = less smoothing 
@@ -69,7 +72,7 @@ xyinterp <- xyFromCell(r, ifilter)
 #calculate the distance of each grid cell inside the buffer from each site
 xydist <- distm(sites_xy, xyinterp)/1000 
 
-#pull values of interest, which in this case is b20
+#pull values of interest
 values <- sites %>% 
   pull(log_aesth)
 
@@ -87,35 +90,34 @@ rval <- r
 rval[ifilter] <- as.numeric(val)
 esth_rast <- rval 
 
-#create dataframe of coordinates and values
-dat1 <- data.frame(xyinterp, val)
-names(dat1) <- c("lon", "lat", "log_aesth")
+#create data frame of coordinates and values
+IDW_data <- data.frame(xyinterp, val)
+names(IDW_data) <- c("lon", "lat", "log_aesth")
 
-dat1 <- dat1 %>%
-  arrange(log_aesth)
+IDW_data <- IDW_data %>%
+  arrange(log_aesth) # SORT DATA BY AESTHETIC VALUE (SO SMALL POINTS GO ON TOP OF BIG ONES)
 
-dat1$lon_2 <- ifelse(dat1$lon <0, dat1$lon+360, dat1$lon) #REARRANGE LAT/LON
+IDW_data$lon_2 <- ifelse(IDW_data$lon <0, IDW_data$lon+360, IDW_data$lon) #REARRANGE LON TO CENTER AUSTRALIA (OPTIONAL VIEW)
 
-
-graphics.off()
-scatter2D(dat1$lon_2, dat1$lat, pch=19,
-          colvar = dat1$log_aesth, cex=0.75,
-          col=(jet(n=nrow(sub_esth))))
-map(database = "world2", fill=T, col="grey90", border="grey90",add=T)
+graphics.off() # QUICK MAP
+scatter2D(IDW_data$lon, IDW_data$lat, pch=19,
+          colvar = IDW_data$log_aesth, cex=0.75,
+          col=(jet(n=nrow(aesth_site))))
+map(database = "world", fill=T, col="grey90", border="grey90",add=T)
 
 #################
 ## SAVE OUTPUT ##
 #################
 
-saveRDS(dat1, "outputs/IDW_raw_site_mean.rds")
+saveRDS(IDW_data, "outputs/IDW_raw_site_mean.rds")
 
 graphics.off()
-scatter2D(dat1$lon, dat1$lat, pch=19,
-          colvar = dat1$log_aesth, cex=0.75,
-          col=(jet(n=nrow(sub_esth))))
+scatter2D(IDW_data$lon, IDW_data$lat, pch=19,
+          colvar = IDW_data$log_aesth, cex=0.75,
+          col=(jet(n=nrow(aesth_site))))
 
-map(database = "world", fill=T, col="grey90", border="grey90",add=T)
-map(database = "world", fill=T, col="grey60", border="grey60",add=T)
+map(database = "world", fill=T, col="grey90", border="grey90",add=T) # LIGHT GRAY
+map(database = "world", fill=T, col="grey60", border="grey60",add=T) # DARK GRAY
 
 
 
