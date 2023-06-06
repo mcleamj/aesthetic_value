@@ -1,0 +1,84 @@
+RLS.cat,FunctGrpTemperate,FunctGrpTropical,Broad_Groups,Allen_Groups
+Ascidians (stalked),other sessile invert,other sessile invert,other sessile invert,coral_algae
+Ascidians (unstalked),other sessile invert,other sessile invert,other sessile invert,coral_algae
+Bryozoan (hard),other sessile invert,other sessile invert,other sessile invert,coral_algae
+Bryozoan (soft),other sessile invert,other sessile invert,other sessile invert,coral_algae
+Solitary Anemones,other sessile invert,other sessile invert,other sessile invert,coral_algae
+"Colonial Anemones, Zoanthids and Corallimorphs",other sessile invert,other sessile invert,other sessile invert,coral_algae
+Hydroids,other sessile invert,other sessile invert,other sessile invert,coral_algae
+Ahermatypic corals,ahermatypic coral,ahermatypic coral,ahermatypic coral,coral_algae
+Hydrocoral,other sessile invert,other sessile invert,other sessile invert,coral_algae
+Soft corals and gorgonians,ahermatypic coral,ahermatypic coral,ahermatypic coral,coral_algae
+Organ-pipe coral (Tubipora),NA,ahermatypic coral,ahermatypic coral,coral_algae
+Heliopora coerulea (blue coral),NA,reef building coral,Corymbose,coral_algae
+Corymbose Acropora corals,NA,reef building coral,Corymbose,coral_algae
+Bottlebrush Acropora corals,NA,reef building coral,Corymbose,coral_algae
+Tabular Acropora Coral,NA,reef building coral,Tabular,coral_algae
+Branching Acropora,NA,reef building coral,Branching,coral_algae
+Branching Pocillopora,NA,reef building coral,Branching,coral_algae
+Branching corals,NA,reef building coral,Branching,coral_algae
+Encrusting corals,NA,reef building coral,Encrusting,coral_algae
+Foliose/plate corals,NA,reef building coral,Laminar,coral_algae
+Digitate corals,NA,reef building coral,Corymbose,coral_algae
+Sub-massive corals,NA,reef building coral,Hemispherical,coral_algae
+Columnar corals,NA,reef building coral,Corymbose,coral_algae
+Massive corals,NA,reef building coral,Hemispherical,coral_algae
+Large-polyp stony corals (free-living),NA,reef building coral,Encrusting,coral_algae
+Barnacles,other sessile invert,other sessile invert,other sessile invert,coral_algae
+Geniculate coralline algae,coralline algae,coralline algae,coralline algae,coral_algae
+Crustose coralline algae,coralline algae,coralline algae,coralline algae,coral_algae
+Encrusting leathery algae,encrusting,encrusting algae,encrusting algae,microalgal_mats
+Medium foliose brown algae,understory macroalgae,fleshy algae,fleshy algae,coral_algae
+Medium foliose green algae,understory macroalgae,fleshy algae,fleshy algae,coral_algae
+Medium foliose red algae,understory macroalgae,fleshy algae,fleshy algae,coral_algae
+Small <2cm algal cover (not trapping sediment),understory macroalgae,fleshy algae,fleshy algae,coral_algae
+Green calcified algae (Halimeda),NA,Halimeda,Halimeda,coral_algae
+Durvillaea,canopy forming macroalgae,NA,canopy forming macroalgae,coral_algae
+Ecklonia,canopy forming macroalgae,NA,canopy forming macroalgae,coral_algae
+Phyllospora,canopy forming macroalgae,NA,canopy forming macroalgae,coral_algae
+Macrocystis,canopy forming macroalgae,NA,canopy forming macroalgae,coral_algae
+Desmarestia and Himantothallus,canopy forming macroalgae,NA,canopy forming macroalgae,coral_algae
+Large brown laminarian kelps,canopy forming macroalgae,NA,canopy forming macroalgae,coral_algae
+Other fucoids,understory macroalgae,NA,understory macroalgae,coral_algae
+Caulerpa,understory macroalgae,NA,understory macroalgae,coral_algae
+Slime (not trapping sediment),slime,slime,slime,microalgal_mats
+Filamentous brown algae_epiphyte,understory macroalgae,turf algae,turf algae,coral_algae
+Filamentous green algae_epiphyte,understory macroalgae,turf algae,turf algae,coral_algae
+Filamentous red algae_epiphyte,understory macroalgae,turf algae,turf algae,coral_algae
+Turfing algae (<2 cm high algal/sediment mat on rock),understory macroalgae,turf algae,turf algae,coral_algae
+Sessile bivalves,other sessile invert,other sessile invert,other sessile invert,coral_algae
+Sessile gastropods,other sessile invert,other sessile invert,other sessile invert,coral_algae
+Seagrass (Halophila),NA,seagrass,seagrass,seagrass
+Seagrass (straplike),NA,seagrass,seagrass,seagrass
+Unscorable,unscorable,unscorable,unscorable,unscorable
+Sponges (encrusting),other sessile invert,other sessile invert,other sessile invert,coral_algae
+Sponges (erect),other sessile invert,other sessile invert,other sessile invert,coral_algae
+Sponges (hollow),other sessile invert,other sessile invert,other sessile invert,coral_algae
+Sponges (massive),other sessile invert,other sessile invert,other sessile invert,coral_algae
+Pebbles/gravel/shell,abiotic,abiotic,Rock,rock
+Cobble,abiotic,abiotic,Rock,rock
+Bare Rock,abiotic,abiotic,Rock,rock
+Sand,abiotic,abiotic,Sand,sand
+Coral rubble,NA,coral rubble,coral rubble,rubble
+Coral rubble with turf/encrusting algae,NA,coral rubble,coral rubble,rubble
+Polychaete,other sessile invert,other sessile invert,other sessile invert,coral_algae
+Worms,other sessile invert,other sessile invert,other sessile invert,coral_algae
+Ascidians,other sessile invert,other sessile invert,other sessile invert,coral_algae
+Bryozoa,other sessile invert,other sessile invert,other sessile invert,coral_algae
+Dead.coral,NA,abiotic,coral rubble,rubble
+Filamentous.algae_epiphyte,understory macroalgae,turf algae,turf algae,coral_algae
+Foliose.Plate.corals,NA,reef building coral,Laminar,coral_algae
+Macroalgae,understory macroalgae,turf algae,turf algae,coral_algae
+Molluscs,other sessile invert,other sessile invert,other sessile invert,coral_algae
+Seagrasses,NA,seagrass,seagrass,seagrass
+Sponges,other sessile invert,other sessile invert,other sessile invert,coral_algae
+Tabular.Acropora.corals,NA,reef building coral,Tabular,coral_algae
+Black...Octocorals,ahermatypic coral,ahermatypic coral,ahermatypic coral,coral_algae
+Cnidaria,NA,NA,NA,NA
+Corals,NA,reef building coral,NA,coral_algae
+Ecklonia.radiata,canopy forming macroalgae,NA,canopy forming macroalgae,coral_algae
+Filamentous.rock.attached.algae,understory macroalgae,turf algae,turf algae,coral_algae
+Macroalgae_canopy.forming,canopy forming macroalgae,NA,canopy forming macroalgae,coral_algae
+Small..2cm.foliose.algal.cover..not.trapping.sediment.,understory macroalgae,turf algae,turf algae,coral_algae
+Stony.corals,NA,reef building coral,NA,coral_algae
+Substrate,NA,NA,NA,NA
