@@ -51,7 +51,7 @@ model_data <- merge(model_data, biodiv, by="SurveyID")
 ## ADD NEW IMPUTED BENTHIC DATA ##
 ##################################
 
-benthic_PCA <- read.table("outputs/RLS_benthic_PCA_imputed.txt")
+benthic_PCA <- read_rds("outputs/RLS_benthic_PCA_imputed.rds")
 benthic_PCA <- benthic_PCA %>%
   select(SurveyID, PC1_imputation, PC2_imputation) %>%
   rename(PC1_imputed = PC1_imputation, PC2_imputed = PC2_imputation)
@@ -69,9 +69,9 @@ model_data$PC2_imputed[model_data$Temperature_Zone=="Temperate"] <- 0
 ## IMPORT AND ATTACH AESTHETIC DATA #
 #####################################
 
-aaesthe_surveyetic_data <- read.csv("outputs/survey_aesth.csv")
+aesthetic_survey_data <- read.csv("outputs/survey_aesth.csv")
 
-model_data <- merge(model_data, aaesthe_surveyetic_data, by="SurveyID")
+model_data <- merge(model_data, aesthetic_survey_data, by="SurveyID")
 
 ############################
 ## HOW MUCH MISSING DATA? ##
@@ -866,3 +866,69 @@ ggpubr::ggarrange(
     xlim(range(dag_output_richness)),
   
   ncol = 2)
+
+
+
+
+
+########################################################
+## TEST HOW WELL THE FULL MODEL PREDICTS UNKNOWN DATA ##
+########################################################
+
+# 91% CORRELATION WITH 4751 TRAINING OBSERVATONS AND 2255 TESTING OBSERVATIONS  
+
+# SPLIT THE DATA
+# HOW MANY COUNTRIES IN THE DATA
+length(unique(model_data$Country))
+#53 - select 20 at random
+rand_countries <- unique(model_data$Country)[sample(1:53,20,replace=FALSE)]
+training <- model_data %>%
+  filter(Country %in% rand_countries)
+testing <- model_data %>%
+  filter(!Country %in% rand_countries)
+
+########################
+## CAUSAL SALAD MODEL ##
+########################
+
+training_model_formula <- 
+  bf(log(aesthe_survey) ~
+       as.factor(Temperature_Zone) +
+       sst_mean +
+       NPP_mean +
+       Depth +
+       fshD +
+       dhw_mean +
+       PC1_imputed +
+       PC2_imputed +
+       HDI2017 +
+       gravtot2 +
+       MPA +
+       (1 | Country/SiteCode),
+     family = gaussian()) 
+
+training_model <- brm(training_model_formula,
+                      data=training,
+                      chains=3, iter=3000, cores=ncores,
+                      refresh=500,
+                      c(set_prior("normal(0,3)", class = "b"),
+                        set_prior("normal(0,3)", class="Intercept")))
+
+############################
+# PREDICT THE TESTING DATA #
+############################
+
+covariates <- names(training_model$data)
+testing <- testing %>%
+  filter(!is.na(Country))
+
+true_values <- log(testing$aesthe_survey)
+
+pred_values <- as.data.frame(predict(training_model, newdata = testing, allow_new_levels=TRUE))
+plot(true_values, pred_values$Estimate)
+cor.test(true_values, pred_values$Estimate)
+
+
+
+
+

@@ -1,6 +1,5 @@
 ###################################################################################################
 #'  SCRIPT TO COMPUTE TAXO/FUN/PHYLO DIVERSITY METRICS AT THE SURVEY LEVEL
-#'
 #' @author Mattia Ghilardi \email {mattia.ghilardi@@leibniz-zmt.de}
 #'         Matthew McLean, \email {mcleamj@@gmail.com}
 #' 
@@ -19,6 +18,7 @@ library(tidyverse)
 #library(dplyr)
 #library(tibble)
 library(mFD)
+library(FD)
 library(FishPhyloMaker)
 library(hillR)
 library(funrar)
