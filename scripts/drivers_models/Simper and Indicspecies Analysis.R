@@ -1,6 +1,4 @@
 
-
-
 #######################################################################################
 #'  CODE TO EXAME SPECIES AND FAMILY DIFFERENCES BETWEEN MPAS AND FISHED SITES
 #'  
@@ -10,7 +8,6 @@
 #'         
 #' @date JUNE 9, 2023
 ########################################################################################
-
 
 ######################
 ## LIBRARY PACKAGES ##
@@ -36,11 +33,58 @@ if(!require(dplyr)){install.packages("dplyr"); library(dplyr)}
 
 library(worms)
 
+##############################
+## IMPORT DATA "MODEL DATA" ##
+##############################
+
+model_data <- readRDS("data/model_data.rds")
+
+model_data$Temperature_Zone <- as.factor(model_data$Temperature_Zone)
+
+names(model_data)
+
+model_data$MPA <- as.factor(model_data$MPA)
+
+#####################################
+## IMPORT AND ATTACH AESTHETIC DATA #
+#####################################
+
+aesthetic_survey_data <- read.csv("outputs/survey_aesth.csv")
+
+model_data <- merge(model_data, aesthetic_survey_data, by="SurveyID")
 
 #################################################################
 ## SIMPER ANALYSIS AND INDISPECIES ANALYSIS BY ECOREGION
 ## TAKE MEANS AND MAKE SOME KIND OF RANKED BOXPLOT BY FAMILY 
 ##################################################################
+
+# CALCULATE AVERAGE SP RICHNESS PER SITE
+site_info <- model_data %>%
+  select(SiteCode, SiteLongitude, SiteLatitude, Country, Ecoregion, MPA)
+site_info <- site_info[!duplicated(site_info$SiteCode),]
+
+site_richness <- model_data %>%
+  select(SiteCode, nb_species) %>%
+  group_by(SiteCode) %>%
+  summarise_all(.funs=mean)
+
+site_richness <- merge(site_richness, site_info, by="SiteCode")
+
+# MAKE A DATA FRAME TO FOCUS ONLY ON NO TAKE MPAS
+# ONLY KEEP ECOREGIONS WITH BOTH FISHED AND NO-TAKE SITES
+no_take_only <- site_richness %>%
+  filter(MPA != "Restricted take")
+no_take_only$MPA <- droplevels(no_take_only$MPA)
+
+selected_regions <- no_take_only %>%
+  group_by(Ecoregion, MPA) %>%
+  dplyr::summarise(n()) %>%
+  group_by(Ecoregion) %>%
+  dplyr::filter(n()>1)
+
+no_take_only <- no_take_only %>%
+  filter(Ecoregion %in% selected_regions$Ecoregion)
+length(unique(no_take_only$Ecoregion))
 
 ## AGGREGATE OCCURENCES BY FAMILY ? GENUS ? 
 ## SPECIES COUNTS PER FAMILY - GET A MATRIX WITH NUM OF SPECIES PER FAMILY
@@ -83,7 +127,7 @@ survey_species <- survey_sp_occ %>%
   dplyr::select(where(is.numeric)) %>%
   colnames() %>%
   as.data.frame() %>%
-  rename("species"= ".")
+  dplyr::rename("species"= ".")
 
 survey_species$species <- gsub("_", " ", survey_species$species)
 survey_species$scientificname <- gsub(" spp.", "", survey_species$species)
@@ -164,7 +208,10 @@ simper_table$family <- simper_table$scientificname
 simper_table <- FindReplace(simper_table, "family", family_info, from="scientificname", to="family",
                             exact = T, vector = F)
 sum(is.na(simper_table$family))
+simper_table$neg_pos_score <- ifelse(simper_table$MPA_species=="yes", simper_table$average,
+                                     simper_table$average*-1)
 simper_table <- merge(simper_table, species_ages, by="scientificname")
+
 
 
 indicator_table$species <- gsub("_"," ", indicator_table$species)
@@ -185,7 +232,7 @@ indicator_table <- merge(indicator_table, species_ages, by="scientificname")
 #' #########################################################
 
 simp_family <- simper_table %>%
-  select(Ecoregion, family, MPA_species, average) %>%
+  select(Ecoregion, family, MPA_species, average, neg_pos_score) %>%
   group_by(Ecoregion, MPA_species, family) %>%
   summarise_all(.funs=mean)
 length(unique(simp_family$family))
@@ -209,6 +256,21 @@ indicator_family <- merge(indicator_family, family_ages, by="family")
 
 
 ## FIRST SIMPER ANALYSIS
+
+## BOXPLOT OF NEG-POS SCORE ##
+ggplot(data=simp_family,
+       aes(x = reorder(family, neg_pos_score, fun = median, .desc =TRUE), 
+           y = neg_pos_score)) + 
+  geom_boxplot(aes(fill=log_age)) + 
+  #geom_jitter(position=position_jitter(0.2)) +
+  theme_bw(base_size = 10) +
+  xlab("Family") +
+  ylab("") +
+  scale_fill_gradient(low = "red",
+                      high = "blue") +
+  scale_x_discrete(guide = guide_axis(angle = 90)) +
+  ggtitle("Family Contributions to MPA Sites")
+
 
 ## MPA CONTRIBUTORS ##
 ggplot(data=

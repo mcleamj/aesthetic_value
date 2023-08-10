@@ -16,40 +16,60 @@ library(pals)
 library(readr)
 library(dplyr)
 
-################################################
-## IMPORT SURVEY-LEVEL AESTHETIC VALUE SCORES
-## AND CALCULATE RAW MEAN PER SITE
-################################################
+###########################################
+## IMPORT AND MERGE SURVEY AND SITE DATA ##
+###########################################
 
-aesth_survey <- read.csv("outputs/survey_aesth.csv")
+survey_esth <- read.csv("outputs/survey_aesth.csv")
+site_info <- readRDS("data/RLS_sitesInfos_tropical.rds")
 
-site_info <- read_rds("data/RLS_sitesInfos_tropical.rds") %>%
+##################################################
+## CALCULATE RESIDUAL (DEVIATION FROM EXPECTED) ##
+##################################################
+
+survey_esth$residual <- survey_esth$aesthe_survey - survey_esth$aesthe_SR_survey
+
+###################
+## PLOT THE DATA ##
+###################
+
+scatter2D(survey_esth$nb_species, survey_esth$aesthe_survey,
+          pch=19, cex=1, colvar = survey_esth$residual,
+          xlab="Species Richness", ylab="Observed Aesthetic Value")
+points(survey_esth$nb_species, survey_esth$aesthe_SR_survey, pch=19, col=1)
+
+#########################################
+## MERGE DATA AND CALCULATE SITE MEANS ##
+#########################################
+
+survey_site <- site_info %>%
   select(SurveyID, SiteCode, SiteLatitude, SiteLongitude)
 
-aesth_survey <- merge(aesth_survey, site_info, by="SurveyID")
+survey_esth <- merge(survey_esth, survey_site, by="SurveyID")
 
-aesth_site <- aesth_survey %>%
-  select(SiteCode, SiteLatitude, SiteLongitude, aesthe_survey) %>%
+site_esth <- survey_esth %>%
+  select(-SurveyID) %>%
   group_by(SiteCode) %>%
-  summarise_all(.funs=mean)
+  summarise_all(mean)
 
-aesth_site$log_aesth <- log(aesth_site$aesthe_survey) # CREATE LOG-TRANSFORMED VERSION OF DATA
+####################################################
+## CALCULATE LOG OF AESTHETIC VALUE FOR EACH SITE ##
+####################################################
 
-scatter2D(aesth_site$SiteLongitude, aesth_site$SiteLatitude, pch=19, # QUICK MAP
-          colvar = aesth_site$log_aesth, cex=0)
-map(database = "world", border=NA, fill=T, col="grey", add=T)
-scatter2D(aesth_site$SiteLongitude, aesth_site$SiteLatitude, pch=19, # QUICK MAP
-          colvar = aesth_site$log_aesth, add=T)
+site_esth$log_esth <- log(site_esth$aesthe_survey)
+
+##############################################################################################
+## CALCULATE INVERSE DISTANCE WEIGHTING INTERPOLATION FOR LOG AESTHETIC VALUE AND RESIDUALS ##
+##############################################################################################
+
+IDW_sites <- site_esth %>%
+  select(SiteLongitude, SiteLatitude, log_esth, residual)
+
+sites_xy <- cbind(IDW_sites$SiteLongitude, IDW_sites$SiteLatitude)
 
 res <- c(1000, 1000) #resolution of map x, y
 my_buffer <- 150*1000 # The size of the buffers around the points in meters
-p <- 1.6 #power for IDW 
-#lower values mean its more influenced by distances further away
-# higher values = less smoothing 
-
-sites <- aesth_site
-
-sites_xy <- cbind(sites$SiteLongitude, sites$SiteLatitude)
+p <- 1.6 #power for IDW
 
 #create raster with resolution defined above 
 r <- raster(nrow = res[1], ncol = res[2]) 
@@ -72,14 +92,18 @@ xyinterp <- xyFromCell(r, ifilter)
 #calculate the distance of each grid cell inside the buffer from each site
 xydist <- distm(sites_xy, xyinterp)/1000 
 
+#####################
+## AESTHETIC VALUE ##
+#####################
+
 #pull values of interest
-values <- sites %>% 
-  pull(log_aesth)
+values_esth <- IDW_sites %>% 
+  pull(log_esth)
 
 #weights each grid cell value by it's distance from the site according to the power you assign. 
 w <- 1/(xydist^p) 
 
-indic <- matrix(values, nrow = 1)
+indic <- matrix(values_esth, nrow = 1)
 isreal <- which(!is.na(indic))
 nvals <- length(isreal)
 
@@ -90,35 +114,48 @@ rval <- r
 rval[ifilter] <- as.numeric(val)
 esth_rast <- rval 
 
-#create data frame of coordinates and values
-IDW_data <- data.frame(xyinterp, val)
-names(IDW_data) <- c("lon", "lat", "log_aesth")
+## CREATE DATA FRAME
+log_esth_IDW <- data.frame(xyinterp, val)
+names(log_esth_IDW) <- c("lon", "lat", "log_esth")
 
-IDW_data <- IDW_data %>%
-  arrange(log_aesth) # SORT DATA BY AESTHETIC VALUE (SO SMALL POINTS GO ON TOP OF BIG ONES)
+log_esth_IDW <- log_esth_IDW %>%
+  arrange(log_esth)
 
-IDW_data$lon_2 <- ifelse(IDW_data$lon <0, IDW_data$lon+360, IDW_data$lon) #REARRANGE LON TO CENTER AUSTRALIA (OPTIONAL VIEW)
+log_esth_IDW$lon_2 <- ifelse(log_esth_IDW$lon <0, log_esth_IDW$lon+360, log_esth_IDW$lon)
 
-graphics.off() # QUICK MAP
-scatter2D(IDW_data$lon, IDW_data$lat, pch=19,
-          colvar = IDW_data$log_aesth, cex=0.75,
-          col=(jet(n=nrow(aesth_site))))
-map(database = "world", fill=T, col="grey90", border="grey90",add=T)
+## SAVE OUTPUT
+saveRDS(log_esth_IDW, "outputs/log_esth_IDW.rds")
 
-#################
-## SAVE OUTPUT ##
-#################
+####################
+## RESIDUAL VALUE ##
+####################
 
-saveRDS(IDW_data, "outputs/IDW_raw_site_mean.rds")
+#pull values of interest
+values_resid <- IDW_sites %>% 
+  pull(residual)
 
-graphics.off()
-scatter2D(IDW_data$lon, IDW_data$lat, pch=19,
-          colvar = IDW_data$log_aesth, cex=0.75,
-          col=(jet(n=nrow(aesth_site))))
+#weights each grid cell value by it's distance from the site according to the power you assign. 
+w <- 1/(xydist^p) 
 
-map(database = "world", fill=T, col="grey90", border="grey90",add=T) # LIGHT GRAY
-map(database = "world", fill=T, col="grey60", border="grey60",add=T) # DARK GRAY
+indic <- matrix(values_resid, nrow = 1)
+isreal <- which(!is.na(indic))
+nvals <- length(isreal)
 
+val <- (indic[isreal] %*% w[isreal,])/colSums(w[isreal,])
+val <- as.numeric(val)
 
+rval <- r
+rval[ifilter] <- as.numeric(val)
+esth_rast <- rval 
 
+## CREATE DATA FRAME
+residual_IDW <- data.frame(xyinterp, val)
+names(residual_IDW) <- c("lon", "lat", "residual")
 
+residual_IDW <- residual_IDW %>%
+  arrange(residual)
+
+residual_IDW$lon_2 <- ifelse(residual_IDW$lon <0, residual_IDW$lon+360, residual_IDW$lon)
+
+## SAVE OUTPUT
+saveRDS(residual_IDW, "outputs/residual_IDW.rds")

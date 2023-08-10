@@ -64,6 +64,15 @@ trophic <- read_rds("outputs/trophic_structure.rds")
 
 model_data <- merge(model_data, trophic, by="SurveyID")
 
+################################################
+## IMPORT AND ADD TAXONOMIC STRUCTURE METRICS ##
+################################################
+
+taxo_structure <- read_rds("outputs/taxo_structure.rds")
+taxo_structure$Taxo_PC1 <- taxo_structure$Taxo_PC1*-1 #ROTATE FOR POS RELATIONSHIP
+
+model_data <- merge(model_data, taxo_structure, by="SiteCode")
+
 ##################################
 ## ADD NEW IMPUTED BENTHIC DATA ##
 ##################################
@@ -71,7 +80,7 @@ model_data <- merge(model_data, trophic, by="SurveyID")
 benthic_PCA <- readRDS("outputs/RLS_benthic_PCA_imputed.rds")
 benthic_PCA <- benthic_PCA %>%
   select(SurveyID, PC1_imputation, PC2_imputation) %>%
-  rename(PC1_imputed = PC1_imputation, PC2_imputed = PC2_imputation)
+  dplyr::rename(PC1_imputed = PC1_imputation, PC2_imputed = PC2_imputation)
 
 model_data <- merge(model_data, benthic_PCA, by = "SurveyID", all=T)
 
@@ -271,90 +280,412 @@ standardized_data <- model_data %>%
   mutate_if(colnames(model_data) %in% z_vars, z_score_2sd)
 
 
-########################################################
-## MODEL TO ASSESS WHEHTER RICHNESS IS HIGHER IN MPAS ##
-## WITH SITE NESTED IN COUNTRY AS RANDOM EFFECTS
-########################################################
+#' ########################################################
+#' ## MODEL TO ASSESS WHEHTER RICHNESS IS HIGHER IN MPAS ##
+#' ## WITH SITE NESTED IN COUNTRY AS RANDOM EFFECTS
+#' ########################################################
+#' 
+#' richness_model_formula  <- bf(nb_species ~ MPA +
+#'                                 Temperature_Zone +
+#'                                 (1 | Country/SiteCode),
+#'                               
+#'                               family=gaussian())
+#' 
+#' richness_model <- brm(richness_model_formula,
+#'                      
+#'                        data=model_data,
+#'                       
+#'                       chains=1, iter=3000, cores=ncores,
+#'                       c(set_prior("normal(0,3)", class = "b"),
+#'                         set_prior("normal(0,3)", class="Intercept")))
+#' 
+#' conditional_effects(richness_model, "MPA")
+#' summary(richness_model)
+#' 
+#' # POSITIVE EFFECT OF MPA ON RICHNESS
+#' 
+#' ########################################################
+#' ## MODEL TO ASSESS WHEHTER RICHNESS IS HIGHER IN MPAS 
+#' ## WITH SITE NESTED IN ECOREGION AS RANDOM EFFECTS
+#' ########################################################
+#' 
+#' richness_model_formula  <- bf(nb_species ~ MPA +
+#'                                 Temperature_Zone +
+#'                                 (1 | Ecoregion/SiteCode),
+#'                               
+#'                               family=gaussian())
+#' 
+#' richness_model <- brm(richness_model_formula,
+#'                       
+#'                       data=model_data,
+#'                      
+#'                        chains=1, iter=3000, cores=ncores,
+#'                       c(set_prior("normal(0,3)", class = "b"),
+#'                         set_prior("normal(0,3)", class="Intercept")))
+#' 
+#' summary(richness_model)
+#' conditional_effects(richness_model)
+#' 
+#' # POSITIVE EFFECT OF MPA ON RICHNESS
+#' 
+#' 
+#' ########################################################
+#' ## MODEL TO ASSESS WHEHTER RICHNESS IS HIGHER IN MPAS 
+#' ## USING SITE NESTED IN ECOREGION AS RANDOM EFFECTS
+#' ## FOR ONLY ECOREGIONS WITH BOTH TYPES OF SITES
+#' ########################################################
+#' 
+#' sub_eco_data <- model_data %>%
+#'   filter(Ecoregion %in% selected_regions$Ecoregion)
+#' 
+#' richness_model_formula  <- bf(nb_species ~ MPA +
+#'                                 Temperature_Zone +
+#'                                 (1 | Ecoregion/SiteCode),
+#'                               
+#'                               family=gaussian())
+#' 
+#' richness_model <- brm(richness_model_formula,
+#'                       
+#'                       data=sub_eco_data,
+#'                      
+#'                        chains=1, iter=3000, cores=ncores,
+#'                       c(set_prior("normal(0,3)", class = "b"),
+#'                         set_prior("normal(0,3)", class="Intercept")))
+#' 
+#' summary(richness_model)
+#' conditional_effects(richness_model)
+#' 
+#' # POSITIVE EFFECT OF MPA ON RICHNESS
+#' 
+#' 
+#' ###################################################################
+#' #' TO ASSESS THE EFFECT OF EACH PATHWAY OF THE
+#' #' TOTAL CAUSAL EFFECT OF MPA, PERFORM THE FOLLOWING
+#' #' CALCULATE THE TOTAL CAUSAL EFFECT OF MPA ACCORDING TO THE DAG
+#' #' THEN TEST THE INDEPENDENT CONTRIBUTION OF EACH PATHWAY
+#' #' BY BLOCKING THE OTHER PATHWAYS
+#' #' THE PATHWAYS OF MPA EFFECT ARE:
+#' #' TAXO DIVERSITY, FUN DIVERSITY, PHYLO DIVERSITY,
+#' #' BENTHIC COMPOSITION, BIOMASS, TROPHIC STRUCTURE
+#' ####################################################################
+#' 
+#' 
+#' ###################################################
+#' ## MPA TOTAL CAUSAL EFFECT FROM DAG-BASED MODELS ##
+#' ###################################################
+#' 
+#' MPA_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+#'                            HDI2017 +
+#'                            fshD +
+#'                            gravtot2 +
+#'                            as.factor(Temperature_Zone) +
+#'                            (1 | Country/SiteCode),
+#'                          
+#'                          family=gaussian())
+#' 
+#' MPA_model <- brm(MPA_model_formula,
+#'                  data=model_data,
+#'                  chains=3, iter=3000, cores=ncores,
+#'                  c(set_prior("normal(0,3)", class = "b"),
+#'                    set_prior("normal(0,3)", class="Intercept")))
+#' 
+#' MPA_post <- as.data.frame(as.matrix(MPA_model)) %>%
+#'   select('b_MPANotake') %>%
+#'   rename("MPA Total Causal Effect" = b_MPANotake)
+#' 
+#' 
+#' #############################
+#' ## MPA "PURE" CONTRIBUTION ##
+#' #############################
+#' 
+#' MPA_pure_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+#'                                HDI2017 + # CONTROL
+#'                                fshD + # CONTROL
+#'                                gravtot2 + # CONTROL
+#'                                Temperature_Zone + # CONTROL
+#'                                
+#'                                 taxo_entropy + # BLOCKED
+#'                                fun_entropy + # BLOCKED
+#'                                phylo_entropy + # BLOCKED
+#'                                Biomass + # BLOCKED
+#'                                PC1_imputed + # BLOCKED
+#'                                PC2_imputed + # BLOCKED
+#'                                PC1_trophic + # BLOCKED
+#'                                PC2_trophic + # BLOCKED
+#'                                
+#'                                (1 | Country/SiteCode),
+#'                              
+#'                              family=gaussian())
+#' 
+#' MPA_pure_model <- brm(MPA_pure_model_formula,
+#'                      
+#'                      data=standardized_data,
+#'                      
+#'                      chains=3, iter=3000, cores=ncores,
+#'                      c(set_prior("normal(0,3)", class = "b"),
+#'                        set_prior("normal(0,3)", class="Intercept")))
+#' 
+#' MPA_pure_post <- as.data.frame(as.matrix(MPA_pure_model)) %>%
+#'   select('b_MPANotake') %>% 
+#'   rename("MPA Pure Direct Effect" = b_MPANotake)
+#' 
+#' 
+#' 
+#' #################################
+#' ## TAXO DIVERSITY CONTRIBUTION ##
+#' #################################
+#' 
+#' tax_div_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+#'                            HDI2017 + # CONTROL
+#'                            fshD + # CONTROL
+#'                            gravtot2 + # CONTROL
+#'                            Temperature_Zone + # CONTROL
+#'                              
+#'                              fun_entropy + # BLOCKED
+#'                              phylo_entropy + # BLOCKED
+#'                              Biomass + # BLOCKED
+#'                              PC1_imputed + # BLOCKED
+#'                              PC2_imputed + # BLOCKED
+#'                              PC1_trophic + # BLOCKED
+#'                              PC2_trophic + # BLOCKED
+#'                              
+#'                            (1 | Country/SiteCode),
+#'                          
+#'                          family=gaussian())
+#' 
+#' tax_div_model <- brm(tax_div_model_formula,
+#'                      
+#'                  data=standardized_data,
+#'                  
+#'                  chains=3, iter=3000, cores=ncores,
+#'                  c(set_prior("normal(0,3)", class = "b"),
+#'                    set_prior("normal(0,3)", class="Intercept")))
+#' 
+#' tax_div_post <- as.data.frame(as.matrix(tax_div_model)) %>%
+#'   select('b_MPANotake') %>% 
+#'   rename("Taxonomic Diversity" = b_MPANotake)
+#' 
+#' 
+#' 
+#' ################################
+#' ## FUN DIVERSITY CONTRIBUTION ##
+#' ################################
+#' 
+#' fun_div_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+#'                                HDI2017 + # CONTROL
+#'                                fshD + # CONTROL
+#'                                gravtot2 + # CONTROL
+#'                                Temperature_Zone + # CONTROL
+#'                                
+#'                                taxo_entropy + # BLOCKED
+#'                                phylo_entropy + # BLOCKED
+#'                                Biomass + # BLOCKED
+#'                                PC1_imputed + # BLOCKED
+#'                                PC2_imputed + # BLOCKED
+#'                                PC1_trophic + # BLOCKED
+#'                                PC2_trophic + # BLOCKED
+#'                                
+#'                                (1 | Country/SiteCode),
+#'                              
+#'                              family=gaussian())
+#' 
+#' fun_div_model <- brm(fun_div_model_formula,
+#'                      
+#'                      data=standardized_data,
+#'                      
+#'                      chains=3, iter=3000, cores=ncores,
+#'                      c(set_prior("normal(0,3)", class = "b"),
+#'                        set_prior("normal(0,3)", class="Intercept")))
+#' 
+#' fun_div_post <- as.data.frame(as.matrix(fun_div_model)) %>%
+#'   select('b_MPANotake') %>%
+#'   rename("Functional Diversity" = b_MPANotake)
+#' 
+#' 
+#' 
+#' ##################################
+#' ## PHYLO DIVERSITY CONTRIBUTION ##
+#' ##################################
+#' 
+#' phylo_div_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+#'                                HDI2017 + # CONTROL
+#'                                fshD + # CONTROL
+#'                                gravtot2 + # CONTROL
+#'                                Temperature_Zone + # CONTROL
+#'                                
+#'                                taxo_entropy + # BLOCKED
+#'                                fun_entropy + # BLOCKED
+#'                                Biomass + # BLOCKED
+#'                                PC1_imputed + # BLOCKED
+#'                                PC2_imputed + # BLOCKED
+#'                                  PC1_trophic + # BLOCKED
+#'                                  PC2_trophic + # BLOCKED
+#'                                  
+#'                                (1 | Country/SiteCode),
+#'                              
+#'                              family=gaussian())
+#' 
+#' phylo_div_model <- brm(phylo_div_model_formula,
+#'                        
+#'                      data=standardized_data,
+#'                      
+#'                      chains=3, iter=3000, cores=ncores,
+#'                      c(set_prior("normal(0,3)", class = "b"),
+#'                        set_prior("normal(0,3)", class="Intercept")))
+#' 
+#' phylo_div_post <- as.data.frame(as.matrix(phylo_div_model)) %>%
+#'   select('b_MPANotake') %>%
+#'   rename("Phylogenetic Diversity" = b_MPANotake)
+#' 
+#' 
+#' 
+#' 
+#' ##########################
+#' ## BIOMASS CONTRIBUTION ##
+#' ##########################
+#' 
+#' biomass_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+#'                                  HDI2017 + # CONTROL
+#'                                  fshD + # CONTROL
+#'                                  gravtot2 + # CONTROL
+#'                                  Temperature_Zone + # CONTROL
+#'                                  
+#'                                  taxo_entropy + # BLOCKED
+#'                                  fun_entropy + # BLOCKED
+#'                                  phylo_entropy + # BLOCKED
+#'                                  PC1_imputed + # BLOCKED
+#'                                  PC2_imputed + # BLOCKED
+#'                                PC1_trophic + # BLOCKED
+#'                                PC2_trophic + # BLOCKED
+#'                                
+#'                                  (1 | Country/SiteCode),
+#'                                
+#'                                family=gaussian())
+#' 
+#' biomass_model <- brm(biomass_model_formula,
+#'                      
+#'                        data=standardized_data,
+#'                      
+#'                        chains=3, iter=3000, cores=ncores,
+#'                        c(set_prior("normal(0,3)", class = "b"),
+#'                          set_prior("normal(0,3)", class="Intercept")))
+#' 
+#' biomass_post <- as.data.frame(as.matrix(biomass_model)) %>%
+#'   select('b_MPANotake') %>%
+#'   rename("Biomass" = b_MPANotake)
+#' 
+#' 
+#' 
+#' 
+#' ##########################
+#' ## BENTHIC CONTRIBUTION ##
+#' ##########################
+#' 
+#' ## DOES THIS NEED TO BE SPLIT BY PC1 AND PC2?
+#' 
+#' benthic_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+#'                                HDI2017 + # CONTROL
+#'                                fshD + # CONTROL
+#'                                gravtot2 + # CONTROL
+#'                                Temperature_Zone + # CONTROL
+#'                                
+#'                                taxo_entropy + # BLOCKED
+#'                                fun_entropy + # BLOCKED
+#'                                phylo_entropy + # BLOCKED
+#'                                Biomass + # BLOCKED
+#'                                  PC1_trophic + # BLOCKED
+#'                                  PC2_trophic + # BLOCKED
+#'                                  
+#'                                (1 | Country/SiteCode),
+#'                              
+#'                              family=gaussian())
+#' 
+#' benthic_model <- brm(benthic_model_formula,
+#'                      
+#'                      data=standardized_data,
+#'                      
+#'                      chains=3, iter=3000, cores=ncores,
+#'                      c(set_prior("normal(0,3)", class = "b"),
+#'                        set_prior("normal(0,3)", class="Intercept")))
+#' 
+#' benthic_post <- as.data.frame(as.matrix(benthic_model)) %>%
+#'   select('b_MPANotake') %>%
+#'   rename("Benthic Composition" = b_MPANotake)
+#' 
+#' 
+#' ##########################
+#' ## TROPHIC CONTRIBUTION ##
+#' ##########################
+#' 
+#' trophic_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+#'                                HDI2017 + # CONTROL
+#'                                fshD + # CONTROL
+#'                                gravtot2 + # CONTROL
+#'                                Temperature_Zone + # CONTROL
+#'                                
+#'                                taxo_entropy + # BLOCKED
+#'                                fun_entropy + # BLOCKED
+#'                                phylo_entropy + # BLOCKED
+#'                                Biomass + # BLOCKED
+#'                                PC1_imputed + # BLOCKED
+#'                                PC2_imputed + # BLOCKED
+#'                                
+#'                                (1 | Country/SiteCode),
+#'                              
+#'                              family=gaussian())
+#' 
+#' trophic_model <- brm(trophic_model_formula,
+#'                      
+#'                      data=standardized_data,
+#'                      
+#'                      chains=3, iter=3000, cores=ncores,
+#'                      c(set_prior("normal(0,3)", class = "b"),
+#'                        set_prior("normal(0,3)", class="Intercept")))
+#' 
+#' trophic_post <- as.data.frame(as.matrix(trophic_model)) %>%
+#'   select('b_MPANotake') %>%
+#'   rename("Trophic Structure" = b_MPANotake)
+#' 
+#' 
+#' 
+#' 
+#' ###########################
+#' ## GROUP MODEL ESTIMATES ##
+#' ###########################
+#' 
+#' model_outputs <- data.frame(MPA_pure_post, tax_div_post, fun_div_post, phylo_div_post,
+#'                             biomass_post, 
+#'                             benthic_post, trophic_post)
+#' 
+#' saveRDS(model_outputs, "MPA_mechanism_effects.rds")
+#' 
+#' model_estimates <- data.frame(median=apply(model_outputs, 2, median))
+#' model_estimates$abs_effect <- abs(model_estimates$median)
+#' model_estimates <- model_estimates %>%
+#'   arrange(desc(abs_effect))
+#' model_outputs <- model_outputs[,order(match(colnames(model_outputs), rownames(model_estimates)))]
+#' 
+#' mcmc_intervals(model_outputs)
+#' 
+#' sum(model_estimates$median)
+#' 
+#' colMeans(MPA_post)
 
-richness_model_formula  <- bf(nb_species ~ MPA +
-                                Temperature_Zone +
-                                (1 | Country/SiteCode),
-                              
-                              family=gaussian())
-
-richness_model <- brm(richness_model_formula,
-                     
-                       data=model_data,
-                      
-                      chains=1, iter=3000, cores=ncores,
-                      c(set_prior("normal(0,3)", class = "b"),
-                        set_prior("normal(0,3)", class="Intercept")))
-
-conditional_effects(richness_model, "MPA")
-summary(richness_model)
-
-# POSITIVE EFFECT OF MPA ON RICHNESS
-
-########################################################
-## MODEL TO ASSESS WHEHTER RICHNESS IS HIGHER IN MPAS 
-## WITH SITE NESTED IN ECOREGION AS RANDOM EFFECTS
-########################################################
-
-richness_model_formula  <- bf(nb_species ~ MPA +
-                                Temperature_Zone +
-                                (1 | Ecoregion/SiteCode),
-                              
-                              family=gaussian())
-
-richness_model <- brm(richness_model_formula,
-                      
-                      data=model_data,
-                     
-                       chains=1, iter=3000, cores=ncores,
-                      c(set_prior("normal(0,3)", class = "b"),
-                        set_prior("normal(0,3)", class="Intercept")))
-
-summary(richness_model)
-conditional_effects(richness_model)
-
-# POSITIVE EFFECT OF MPA ON RICHNESS
+# SUM OF INDIVIDUAL PATHWAYS IS 2X HIGHER THAN TOTAL MPA EFFECT - WHY? OVERLAP??
 
 
-########################################################
-## MODEL TO ASSESS WHEHTER RICHNESS IS HIGHER IN MPAS 
-## USING SITE NESTED IN ECOREGION AS RANDOM EFFECTS
-## FOR ONLY ECOREGIONS WITH BOTH TYPES OF SITES
-########################################################
 
-sub_eco_data <- model_data %>%
-  filter(Ecoregion %in% selected_regions$Ecoregion)
 
-richness_model_formula  <- bf(nb_species ~ MPA +
-                                Temperature_Zone +
-                                (1 | Ecoregion/SiteCode),
-                              
-                              family=gaussian())
-
-richness_model <- brm(richness_model_formula,
-                      
-                      data=sub_eco_data,
-                     
-                       chains=1, iter=3000, cores=ncores,
-                      c(set_prior("normal(0,3)", class = "b"),
-                        set_prior("normal(0,3)", class="Intercept")))
-
-summary(richness_model)
-conditional_effects(richness_model)
-
-# POSITIVE EFFECT OF MPA ON RICHNESS
 
 
 ###################################################################
 #' TO ASSESS THE EFFECT OF EACH PATHWAY OF THE
 #' TOTAL CAUSAL EFFECT OF MPA, PERFORM THE FOLLOWING
-#' CALCULATE THE TOTAL CAUSAL EFFECT OF MPA ACCORDING TO THE DAG
-#' THEN TEST THE INDEPENDENT CONTRIBUTION OF EACH PATHWAY
-#' BY BLOCKING THE OTHER PATHWAYS
+#' USE THE MODEL FORMULA TO ESTIAMTE THE TOTAL CAUSAL EFFECT OF MPA
+#' AND BLOCK EACH PATHWAY ONE BY ONE BY ADDING EACH PATHWAY
+#' INDIVIDUALLY TO THE MODEL
+#' THE CONTRIBUTION FOR EACH VARIABLE SHOULD BE THE AMOUNT
+#' BY WHICH THE TOTAL EFFECT DECREASES WHEN THE PATHWAY IS BLOCKED 
 #' THE PATHWAYS OF MPA EFFECT ARE:
 #' TAXO DIVERSITY, FUN DIVERSITY, PHYLO DIVERSITY,
 #' BENTHIC COMPOSITION, BIOMASS, TROPHIC STRUCTURE
@@ -382,33 +713,26 @@ MPA_model <- brm(MPA_model_formula,
 
 MPA_post <- as.data.frame(as.matrix(MPA_model)) %>%
   select('b_MPANotake') %>%
-  rename("MPA Total Causal Effect" = b_MPANotake)
+  dplyr::rename("MPA Total Causal Effect" = b_MPANotake)
 
+#################################
+## TAXO DIVERSITY CONTRIBUTION ##
+#################################
 
-#############################
-## MPA "PURE" CONTRIBUTION ##
-#############################
-
-MPA_pure_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+tax_div_model_formula  <- bf(log(aesthe_survey) ~ MPA +
                                HDI2017 + # CONTROL
                                fshD + # CONTROL
                                gravtot2 + # CONTROL
                                Temperature_Zone + # CONTROL
                                
-                                taxo_entropy + # BLOCKED
-                               fun_entropy + # BLOCKED
-                               phylo_entropy + # BLOCKED
-                               Biomass + # BLOCKED
-                               PC1_imputed + # BLOCKED
-                               PC2_imputed + # BLOCKED
-                               PC1_trophic + # BLOCKED
-                               PC2_trophic + # BLOCKED
+                               taxo_entropy + # BLOCKED
+                              
                                
                                (1 | Country/SiteCode),
                              
                              family=gaussian())
 
-MPA_pure_model <- brm(MPA_pure_model_formula,
+tax_div_model <- brm(tax_div_model_formula,
                      
                      data=standardized_data,
                      
@@ -416,47 +740,11 @@ MPA_pure_model <- brm(MPA_pure_model_formula,
                      c(set_prior("normal(0,3)", class = "b"),
                        set_prior("normal(0,3)", class="Intercept")))
 
-MPA_pure_post <- as.data.frame(as.matrix(MPA_pure_model)) %>%
-  select('b_MPANotake') %>% 
-  rename("MPA Pure Direct Effect" = b_MPANotake)
-
-
-
-#################################
-## TAXO DIVERSITY CONTRIBUTION ##
-#################################
-
-tax_div_model_formula  <- bf(log(aesthe_survey) ~ MPA +
-                           HDI2017 + # CONTROL
-                           fshD + # CONTROL
-                           gravtot2 + # CONTROL
-                           Temperature_Zone + # CONTROL
-                             
-                             fun_entropy + # BLOCKED
-                             phylo_entropy + # BLOCKED
-                             Biomass + # BLOCKED
-                             PC1_imputed + # BLOCKED
-                             PC2_imputed + # BLOCKED
-                             PC1_trophic + # BLOCKED
-                             PC2_trophic + # BLOCKED
-                             
-                           (1 | Country/SiteCode),
-                         
-                         family=gaussian())
-
-tax_div_model <- brm(tax_div_model_formula,
-                     
-                 data=standardized_data,
-                 
-                 chains=3, iter=3000, cores=ncores,
-                 c(set_prior("normal(0,3)", class = "b"),
-                   set_prior("normal(0,3)", class="Intercept")))
-
 tax_div_post <- as.data.frame(as.matrix(tax_div_model)) %>%
-  select('b_MPANotake') %>% 
-  rename("Taxonomic Diversity" = b_MPANotake)
+  select('b_MPANotake') 
 
-
+tax_div_post <- data.frame(MPA_post$`MPA Total Causal Effect` - tax_div_post$b_MPANotake)
+colnames(tax_div_post) <- "tax_entropy"
 
 ################################
 ## FUN DIVERSITY CONTRIBUTION ##
@@ -468,13 +756,7 @@ fun_div_model_formula  <- bf(log(aesthe_survey) ~ MPA +
                                gravtot2 + # CONTROL
                                Temperature_Zone + # CONTROL
                                
-                               taxo_entropy + # BLOCKED
-                               phylo_entropy + # BLOCKED
-                               Biomass + # BLOCKED
-                               PC1_imputed + # BLOCKED
-                               PC2_imputed + # BLOCKED
-                               PC1_trophic + # BLOCKED
-                               PC2_trophic + # BLOCKED
+                               fun_entropy + # BLOCKED
                                
                                (1 | Country/SiteCode),
                              
@@ -489,8 +771,10 @@ fun_div_model <- brm(fun_div_model_formula,
                        set_prior("normal(0,3)", class="Intercept")))
 
 fun_div_post <- as.data.frame(as.matrix(fun_div_model)) %>%
-  select('b_MPANotake') %>%
-  rename("Functional Diversity" = b_MPANotake)
+  select('b_MPANotake') 
+
+fun_div_post <- data.frame(MPA_post$`MPA Total Causal Effect` - fun_div_post$b_MPANotake)
+colnames(fun_div_post) <- "fun_entropy"
 
 
 
@@ -499,133 +783,119 @@ fun_div_post <- as.data.frame(as.matrix(fun_div_model)) %>%
 ##################################
 
 phylo_div_model_formula  <- bf(log(aesthe_survey) ~ MPA +
-                               HDI2017 + # CONTROL
-                               fshD + # CONTROL
-                               gravtot2 + # CONTROL
-                               Temperature_Zone + # CONTROL
-                               
-                               taxo_entropy + # BLOCKED
-                               fun_entropy + # BLOCKED
-                               Biomass + # BLOCKED
-                               PC1_imputed + # BLOCKED
-                               PC2_imputed + # BLOCKED
-                                 PC1_trophic + # BLOCKED
-                                 PC2_trophic + # BLOCKED
-                                 
-                               (1 | Country/SiteCode),
-                             
-                             family=gaussian())
-
-phylo_div_model <- brm(phylo_div_model_formula,
-                       
-                     data=standardized_data,
-                     
-                     chains=3, iter=3000, cores=ncores,
-                     c(set_prior("normal(0,3)", class = "b"),
-                       set_prior("normal(0,3)", class="Intercept")))
-
-phylo_div_post <- as.data.frame(as.matrix(phylo_div_model)) %>%
-  select('b_MPANotake') %>%
-  rename("Phylogenetic Diversity" = b_MPANotake)
-
-
-
-
-##########################
-## BIOMASS CONTRIBUTION ##
-##########################
-
-biomass_model_formula  <- bf(log(aesthe_survey) ~ MPA +
                                  HDI2017 + # CONTROL
                                  fshD + # CONTROL
                                  gravtot2 + # CONTROL
                                  Temperature_Zone + # CONTROL
                                  
-                                 taxo_entropy + # BLOCKED
-                                 fun_entropy + # BLOCKED
                                  phylo_entropy + # BLOCKED
-                                 PC1_imputed + # BLOCKED
-                                 PC2_imputed + # BLOCKED
-                               PC1_trophic + # BLOCKED
-                               PC2_trophic + # BLOCKED
-                               
+                                 
                                  (1 | Country/SiteCode),
                                
                                family=gaussian())
 
-biomass_model <- brm(biomass_model_formula,
-                     
+phylo_div_model <- brm(phylo_div_model_formula,
+                       
                        data=standardized_data,
-                     
+                       
                        chains=3, iter=3000, cores=ncores,
                        c(set_prior("normal(0,3)", class = "b"),
                          set_prior("normal(0,3)", class="Intercept")))
 
-biomass_post <- as.data.frame(as.matrix(biomass_model)) %>%
-  select('b_MPANotake') %>%
-  rename("Biomass" = b_MPANotake)
+phylo_div_post <- as.data.frame(as.matrix(phylo_div_model)) %>%
+  select('b_MPANotake')
+
+phylo_div_post <- data.frame(MPA_post$`MPA Total Causal Effect` - phylo_div_post$b_MPANotake)
+colnames(phylo_div_post) <- "phylo_entropy"
+
+hist(phylo_div_post$phylo_entropy)
 
 
+##############################
+## BENTHIC PC1 CONTRIBUTION ##
+##############################
 
-
-##########################
-## BENTHIC CONTRIBUTION ##
-##########################
-
-## DOES THIS NEED TO BE SPLIT BY PC1 AND PC2?
-
-benthic_model_formula  <- bf(log(aesthe_survey) ~ MPA +
-                               HDI2017 + # CONTROL
-                               fshD + # CONTROL
-                               gravtot2 + # CONTROL
-                               Temperature_Zone + # CONTROL
+benthic_PC1_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+                                   HDI2017 + # CONTROL
+                                   fshD + # CONTROL
+                                   gravtot2 + # CONTROL
+                                   Temperature_Zone + # CONTROL
+                                   
+                                   PC1_imputed + # BLOCKED
                                
-                               taxo_entropy + # BLOCKED
-                               fun_entropy + # BLOCKED
-                               phylo_entropy + # BLOCKED
-                               Biomass + # BLOCKED
-                                 PC1_trophic + # BLOCKED
-                                 PC2_trophic + # BLOCKED
+                               (1 | Country/SiteCode),
+                             
+                             family=gaussian())
+
+benthic_PC1_model <- brm(benthic_PC1_model_formula,
+                     
+                     data=standardized_data,
+                     
+                     chains=3, iter=3000, cores=ncores,
+                     c(set_prior("normal(0,3)", class = "b"),
+                       set_prior("normal(0,3)", class="Intercept")))
+
+benthic_PC1_post <- as.data.frame(as.matrix(benthic_PC1_model)) %>%
+  select('b_MPANotake') 
+
+benthic_PC1_post <- data.frame(MPA_post$`MPA Total Causal Effect` - benthic_PC1_post$b_MPANotake)
+colnames(benthic_PC1_post) <- "PC1_Benthic"
+
+hist(benthic_PC1_post$PC1_Benthic)
+
+
+##############################
+## BENTHIC PC2 CONTRIBUTION ##
+##############################
+
+benthic_PC2_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+                                   HDI2017 + # CONTROL
+                                   fshD + # CONTROL
+                                   gravtot2 + # CONTROL
+                                   Temperature_Zone + # CONTROL
+                                   
+                                   PC2_imputed + # BLOCKED
+                                   
+                                   (1 | Country/SiteCode),
                                  
-                               (1 | Country/SiteCode),
-                             
-                             family=gaussian())
+                                 family=gaussian())
 
-benthic_model <- brm(benthic_model_formula,
-                     
-                     data=standardized_data,
-                     
-                     chains=3, iter=3000, cores=ncores,
-                     c(set_prior("normal(0,3)", class = "b"),
-                       set_prior("normal(0,3)", class="Intercept")))
+benthic_PC2_model <- brm(benthic_PC2_model_formula,
+                         
+                         data=standardized_data,
+                         
+                         chains=3, iter=3000, cores=ncores,
+                         c(set_prior("normal(0,3)", class = "b"),
+                           set_prior("normal(0,3)", class="Intercept")))
 
-benthic_post <- as.data.frame(as.matrix(benthic_model)) %>%
-  select('b_MPANotake') %>%
-  rename("Benthic Composition" = b_MPANotake)
+benthic_PC2_post <- as.data.frame(as.matrix(benthic_PC2_model)) %>%
+  select('b_MPANotake') 
+
+benthic_PC2_post <- data.frame(MPA_post$`MPA Total Causal Effect` - benthic_PC2_post$b_MPANotake)
+colnames(benthic_PC2_post) <- "PC2_Benthic"
+
+hist(benthic_PC2_post$PC2_Benthic)
 
 
-##########################
-## TROPHIC CONTRIBUTION ##
-##########################
+##############################
+## TROPHIC PC1 CONTRIBUTION ##
+##############################
 
-trophic_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+# WHAT ABOUT DIRECTIONALITY OF PC AXES? - GOOD
+
+trophic_PC1_model_formula  <- bf(log(aesthe_survey) ~ MPA +
                                HDI2017 + # CONTROL
                                fshD + # CONTROL
                                gravtot2 + # CONTROL
                                Temperature_Zone + # CONTROL
                                
-                               taxo_entropy + # BLOCKED
-                               fun_entropy + # BLOCKED
-                               phylo_entropy + # BLOCKED
-                               Biomass + # BLOCKED
-                               PC1_imputed + # BLOCKED
-                               PC2_imputed + # BLOCKED
+                               PC1_trophic + # BLOCKED
                                
                                (1 | Country/SiteCode),
                              
                              family=gaussian())
 
-trophic_model <- brm(trophic_model_formula,
+trophic_PC1_model <- brm(trophic_PC1_model_formula,
                      
                      data=standardized_data,
                      
@@ -633,10 +903,114 @@ trophic_model <- brm(trophic_model_formula,
                      c(set_prior("normal(0,3)", class = "b"),
                        set_prior("normal(0,3)", class="Intercept")))
 
-trophic_post <- as.data.frame(as.matrix(trophic_model)) %>%
-  select('b_MPANotake') %>%
-  rename("Trophic Structure" = b_MPANotake)
+trophic_PC1_post <- as.data.frame(as.matrix(trophic_PC1_model)) %>%
+  select('b_MPANotake')
 
+trophic_PC1_post <- data.frame(MPA_post$`MPA Total Causal Effect` - trophic_PC1_post$b_MPANotake)
+colnames(trophic_PC1_post) <- "PC1_Trophic"
+
+hist(trophic_PC1_post$PC1_Trophic)
+
+
+##############################
+## TROPHIC PC2 CONTRIBUTION ##
+##############################
+
+trophic_PC2_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+                                   HDI2017 + # CONTROL
+                                   fshD + # CONTROL
+                                   gravtot2 + # CONTROL
+                                   Temperature_Zone + # CONTROL
+                                   
+                                   PC2_trophic + # BLOCKED
+                                   
+                                   (1 | Country/SiteCode),
+                                 
+                                 family=gaussian())
+
+trophic_PC2_model <- brm(trophic_PC2_model_formula,
+                         
+                         data=standardized_data,
+                         
+                         chains=3, iter=3000, cores=ncores,
+                         c(set_prior("normal(0,3)", class = "b"),
+                           set_prior("normal(0,3)", class="Intercept")))
+
+trophic_PC2_post <- as.data.frame(as.matrix(trophic_PC2_model)) %>%
+  select('b_MPANotake')
+
+trophic_PC2_post <- data.frame(MPA_post$`MPA Total Causal Effect` - trophic_PC2_post$b_MPANotake)
+colnames(trophic_PC2_post) <- "PC2_Trophic"
+
+hist(trophic_PC2_post$PC2_Trophic)
+
+
+###########################
+## Taxo PC1 CONTRIBUTION ##
+###########################
+
+# WHAT ABOUT DIRECTIONALITY OF PC AXES? - GOOD
+
+Taxo_PC1_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+                                HDI2017 + # CONTROL
+                                fshD + # CONTROL
+                                gravtot2 + # CONTROL
+                                Temperature_Zone + # CONTROL
+                                
+                                Taxo_PC1 + # BLOCKED
+                                
+                                (1 | Country/SiteCode),
+                              
+                              family=gaussian())
+
+Taxo_PC1_model <- brm(Taxo_PC1_model_formula,
+                      
+                      data=standardized_data,
+                      
+                      chains=3, iter=3000, cores=ncores,
+                      c(set_prior("normal(0,3)", class = "b"),
+                        set_prior("normal(0,3)", class="Intercept")))
+
+Taxo_PC1_post <- as.data.frame(as.matrix(Taxo_PC1_model)) %>%
+  select('b_MPANotake')
+
+Taxo_PC1_post <- data.frame(MPA_post$`MPA Total Causal Effect` - Taxo_PC1_post$b_MPANotake)
+colnames(Taxo_PC1_post) <- "Taxo_PC1"
+
+hist(Taxo_PC1_post$Taxo_PC1)
+
+
+##############################
+## Taxo PC2 CONTRIBUTION ##
+##############################
+
+Taxo_PC2_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+                                HDI2017 + # CONTROL
+                                fshD + # CONTROL
+                                gravtot2 + # CONTROL
+                                Temperature_Zone + # CONTROL
+                                
+                                Taxo_PC2 + # BLOCKED
+                                
+                                (1 | Country/SiteCode),
+                              
+                              family=gaussian())
+
+Taxo_PC2_model <- brm(Taxo_PC2_model_formula,
+                      
+                      data=standardized_data,
+                      
+                      chains=3, iter=3000, cores=ncores,
+                      c(set_prior("normal(0,3)", class = "b"),
+                        set_prior("normal(0,3)", class="Intercept")))
+
+Taxo_PC2_post <- as.data.frame(as.matrix(Taxo_PC2_model)) %>%
+  select('b_MPANotake')
+
+Taxo_PC2_post <- data.frame(MPA_post$`MPA Total Causal Effect` - Taxo_PC2_post$b_MPANotake)
+colnames(Taxo_PC2_post) <- "Taxo_PC2"
+
+hist(Taxo_PC2_post$Taxo_PC2)
 
 
 
@@ -644,22 +1018,25 @@ trophic_post <- as.data.frame(as.matrix(trophic_model)) %>%
 ## GROUP MODEL ESTIMATES ##
 ###########################
 
-model_outputs <- data.frame(MPA_pure_post, tax_div_post, fun_div_post, phylo_div_post,
-                            biomass_post, 
-                            benthic_post, trophic_post)
+model_outputs <- data.frame(MPA_post, tax_div_post, fun_div_post, phylo_div_post,
+                            benthic_PC1_post, benthic_PC2_post,
+                            trophic_PC1_post, trophic_PC2_post,
+                            Taxo_PC1_post, Taxo_PC1_post)
 
-saveRDS(model_outputs, "MPA_mechanism_effects.rds")
+saveRDS(model_outputs, "outputs/MPA_mechanism_effects_V2.rds")
+model_outputs <- read_rds("outputs/MPA_mechanism_effects_V2.rds")
 
 model_estimates <- data.frame(median=apply(model_outputs, 2, median))
+model_estimates$variable <- rownames(model_estimates)
 model_estimates$abs_effect <- abs(model_estimates$median)
 model_estimates <- model_estimates %>%
   arrange(desc(abs_effect))
-model_outputs <- model_outputs[,order(match(colnames(model_outputs), rownames(model_estimates)))]
+model_outputs <- model_outputs[,order(match(colnames(model_outputs), model_estimates$variable))]
 
 mcmc_intervals(model_outputs)
 
-sum(model_estimates$median)
+model_estimates %>%
+  filter(variable != "MPA.Total.Causal.Effect") %>%
+  summarise(sum(median))
 
 colMeans(MPA_post)
-
-# SUM OF INDIVIDUAL PATHWAYS IS 2X HIGHER THAN TOTAL MPA EFFECT - WHY? OVERLAP??

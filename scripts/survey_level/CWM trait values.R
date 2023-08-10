@@ -9,6 +9,7 @@
 #' @date 2021/08/11
 ##################################################################################################
 
+library(stringr)
 library(tidyverse)
 library(DataCombine)
 library(FD)
@@ -62,7 +63,7 @@ survey_sp_occ <- survey_sp_occ[-which(rowSums(survey_sp_occ)==0),]
 # LOG TRANSFORM BIOMASS DATA #
 survey_sp_biom <- log10(survey_sp_biom + 1)
 
-# CWM Traits
+# CWM TRAITS USING OCCURENENCE DATA
 species_traits <- species_traits %>%
   arrange(Species) %>%
   column_to_rownames("Species") %>%
@@ -77,8 +78,8 @@ species_traits <- species_traits %>%
 sapply(species_traits, function(x) paste(round(sum(is.na(x))/length(x),2)*100,"%",sep=""))
 str(species_traits)
 
-cwm_traits_cont <- functcomp(as.matrix(select(species_traits, c(BodySize, Trophic.Level))), as.matrix(survey_sp_biom))
-cwm_traits_cat <-  functcomp(as.matrix(select(species_traits, Diet)), as.matrix(survey_sp_biom),CWM.type = "all")
+cwm_traits_cont <- functcomp(as.matrix(select(species_traits, c(BodySize, Trophic.Level))), as.matrix(survey_sp_occ))
+cwm_traits_cat <-  functcomp(as.matrix(select(species_traits, Diet)), as.matrix(survey_sp_occ),CWM.type = "all")
 
 cwm_traits <- data.frame(cwm_traits_cont, cwm_traits_cat)                       
 
@@ -94,7 +95,7 @@ fviz_pca_var(trophic_PCA, col.var = "contrib",
 
 trophic_structure <- data.frame(cwm_traits,
                             trophic_PCA$x[,1:4]) %>%
-  rename(PC1_trophic = PC1, PC2_trophic = PC2,
+  dplyr::rename(PC1_trophic = PC1, PC2_trophic = PC2,
          PC3_trophic = PC3, PC4_trophic = PC4)
 trophic_structure$SurveyID <- rownames(trophic_structure)
 

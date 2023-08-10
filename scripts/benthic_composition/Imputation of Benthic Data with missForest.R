@@ -117,6 +117,27 @@ fviz_pca_var(RLStropical_PCA, col.var = "contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
              repel = TRUE)
 
+
+############################################################
+## ROTATE THE FIRST PC AXIS 
+## FURTHER ANALYSIS SHOWS A "NEGATIVE" CORRELATION BETWEEN 
+## PC1 AND AESTHETIC VALUE 
+## THIS RELATIONSHIP IS NOT ACTUALLY NEGATIVE
+## (ONLY DIRECTIONAL FOR ORDINATION AXES)
+## ROTATING THE PCA WILL MAKE THIS RELATIONSHIP POSITIVE 
+## WITHOUT CHANGING ANYTHING, AND WILL MAKE 
+## OTHER ANALYSES MUCH EASIER
+############################################################
+
+# MULTIPLY PC1 BY -1 - IS THERE A BETTER WAY TO DO THIS?
+RLStropical_PCA$x[,1] <- RLStropical_PCA$x[,1] * -1
+RLStropical_PCA$rotation[,1] <- RLStropical_PCA$rotation[,1] * -1
+jpeg("figures_tables/benthic_PCA.jpeg")
+fviz_pca_var(RLStropical_PCA, axes = c(1,2), col.var = "contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE) 
+dev.off()
+
 #############################################################################################
 #' PERFORM IMPUTATION WITH MISS FOREST PACKAGE
 #' IMPUTATION WITH MISS FOREST VARIES FROM ONE ITERATION TO THE NEXT
