@@ -190,6 +190,25 @@ PC3_imputation <- rowMeans(PC3_imputation)
 RLS_PC_imputed <- data.frame(selected_survey_info, PC1_imputation, PC2_imputation, PC3_imputation)
 
 
+# TEST ACCURACY WITH 35% OF DATA DELETED ##
+test_data <- RLS_PC_scores %>%
+  select(SurveyID, SiteLongitude, SiteLatitude, PC3) %>%
+  na.omit
+rownames(test_data) <- test_data$SurveyID
+test_data$SurveyID <- NULL 
+
+test_data_prime <- test_data
+deleted_rows <- sample(1:nrow(test_data_prime), round(nrow(test_data_prime) * 0.35))
+test_data_prime[deleted_rows,"PC3"] <- NA #DELETE 35% OF THE DATA AT RANDOM
+
+test_data_prime <- missForest(test_data_prime)$ximp # RUN MISS FOREST
+
+test_data <- test_data[deleted_rows,]
+test_data_prime <- test_data_prime[deleted_rows,]
+
+# CHECK CORRELATIONS BETWEEN TRUE AND IMPUTED DATA VAUES
+cor.test(test_data$PC3, test_data_prime$PC3)
+
 ############################################################
 ## NEXT PERFORM IMPUTATION DIRECTLY ON BENTHIC CATEGORIES ##
 ############################################################
@@ -270,15 +289,24 @@ for(i in unique(benthic_categories)){
   
 }
 
+
 # MEAN CORRELATION ACROSS 10 ITERATIONS
 cor_table %>%
   group_by(variable) %>%
-  summarise_all(.funs=mean)
+  summarise_all(.funs=mean) %>%
+  arrange(correlation)
 
 # MAX CORRELATION ACROSS 10 ITERATIONS
 cor_table %>%
   group_by(variable) %>%
-  summarise_all(.funs=max)
+  summarise_all(.funs=max) %>%
+  arrange(correlation)
+
+# MIN CORRELATION ACROSS 10 ITERATIONS
+cor_table %>%
+  group_by(variable) %>%
+  summarise_all(.funs=min) %>%
+  arrange(correlation)
 
 ggplot(cor_table) + geom_density(aes(x = correlation, fill = variable), alpha = 0.2)
 
@@ -402,6 +430,8 @@ range(imputed_benthic_transformed)
 imputed_benthic_transformed <- asin(sqrt(imputed_benthic_transformed)) # ARC SIN TRANSFORMATION PRIOR TO PCA
 
 RLS_PCA_using_imputed <- prcomp(imputed_benthic_transformed, scale. = FALSE)
+# ROTATE FOR POSITIVE CORAL VALUES
+RLS_PCA_using_imputed$rotation[,1] <- RLS_PCA_using_imputed$rotation[,1] * -1
 fviz_pca_var(RLS_PCA_using_imputed, col.var = "contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
              repel = TRUE)

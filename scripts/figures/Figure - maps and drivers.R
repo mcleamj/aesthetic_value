@@ -53,7 +53,7 @@ aes_coefs <- aes_coefs %>%
 aes_coefs$abs_effect <- abs(aes_coefs$Estimate)
 
 aes_coefs <- aes_coefs %>%
-  arrange(abs_effect)
+  arrange(type, abs_effect)
 
 deviation_models <- read_rds("outputs/dag_output_richness.rds")
 deviation_coefs <- as.data.frame(posterior_summary(deviation_models, probs=c(0.05,0.25,0.75,0.95)))
@@ -83,6 +83,17 @@ log_esth_IDW <- readRDS("outputs/log_esth_IDW.rds")
 
 residual_IDW <- readRDS("outputs/residual_IDW.rds")
 
+
+#########################
+## DEFINE POINT COLORS ##
+#########################
+
+# anthro_color <- adjustcolor("black",alpha.f = 1)
+# env_color <- adjustcolor("grey", alpha.f = 1)
+
+anthro_color <- adjustcolor("blue",alpha.f = 0.5)
+env_color <- adjustcolor("green", alpha.f = 0.5)
+
 ##################################
 ## MAKE THE FIGURE USING BASE R ##
 ##################################
@@ -93,33 +104,26 @@ graphics.off()
 par(oma=c(0,0,0,0))
 par(mar=c(4,4,4,4))
 
-m2 <- matrix(c(1,1,1,1,1,1,1,1,0,2,2,2,
-               1,1,1,1,1,1,1,1,0,2,2,2,
-               1,1,1,1,1,1,1,1,0,2,2,2,
-               1,1,1,1,1,1,1,1,0,2,2,2,
-               1,1,1,1,1,1,1,1,0,2,2,2,
-               1,1,1,1,1,1,1,1,0,2,2,2,
-               3,3,3,3,3,3,3,3,0,4,4,4,
-               3,3,3,3,3,3,3,3,0,4,4,4,
-               3,3,3,3,3,3,3,3,0,4,4,4,
-               3,3,3,3,3,3,3,3,0,4,4,4,
-               3,3,3,3,3,3,3,3,0,4,4,4,
-               3,3,3,3,3,3,3,3,0,4,4,4),
+m2 <- matrix(c(1,1,1,1,1,1,1,1,0,0,2,2,2,
+               1,1,1,1,1,1,1,1,0,0,2,2,2,
+               1,1,1,1,1,1,1,1,0,0,2,2,2,
+               1,1,1,1,1,1,1,1,0,0,2,2,2,
+               1,1,1,1,1,1,1,1,0,0,2,2,2,
+               1,1,1,1,1,1,1,1,0,0,2,2,2,
+               3,3,3,3,3,3,3,3,0,0,4,4,4,
+               3,3,3,3,3,3,3,3,0,0,4,4,4,
+               3,3,3,3,3,3,3,3,0,0,4,4,4,
+               3,3,3,3,3,3,3,3,0,0,4,4,4,
+               3,3,3,3,3,3,3,3,0,0,4,4,4,
+               3,3,3,3,3,3,3,3,0,0,4,4,4),
              nrow = 12, 
-             ncol= 12,
+             ncol= 13,
              byrow = TRUE)
 
-layout(m2, widths = c(1,1,1,1,1,1,1,1,1,1,1,1),
+layout(m2, widths = c(1,1,1,1,1,1,1,1,1,0.5,1,1,1),
        heights = c(1,1,1,1,1,1,1,1,1,1,1,1))
 
 layout.show(n=4)
-
-#########################
-## DEFINE POINT COLORS ##
-#########################
-
-anthro_color <- adjustcolor("blue",alpha.f = 0.25)
-env_color <- adjustcolor("green", alpha.f = 0.25)
 
 ##################################
 ## PLOT THE AESTHETIC VALUE MAP ##
@@ -127,18 +131,21 @@ env_color <- adjustcolor("green", alpha.f = 0.25)
 
 scatter2D(log_esth_IDW$lon, log_esth_IDW$lat, pch=19,
           colvar = log_esth_IDW$log_esth, cex=0,
-          col=(jet(n=nrow(log_esth_IDW))),
+          col=(plasma(n=nrow(log_esth_IDW))),
           xlab="Longitude", ylab="Latitude", 
           cex.lab=1.5)
 rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = adjustcolor("grey80",alpha=0.2))
+#rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = adjustcolor("grey20",alpha=0.2))
 scatter2D(log_esth_IDW$lon, log_esth_IDW$lat, pch=19,
           colvar = log_esth_IDW$log_esth, cex=0.75,
-          col=(jet(n=nrow(log_esth_IDW))),
+          col=(plasma(n=nrow(log_esth_IDW))),
           add=TRUE)
 mtext(side=4, line=1, text="log(Aesthetic Value)")
-mtext(side=3, adj=-0.05, text="A", line=1.5, font=2, cex=1.5)
+mtext(side=3, adj=-0.05, text="a)", line=1.5, font=2, cex=1.25)
 
-map(database = "world", fill=T, col="grey85", border="grey85",add=T)
+map(database = "world", fill=T, col="grey80", border="grey80",add=T)
+#map(database = "world", fill=T, col="grey70", border="grey70",add=T)
+#map(database = "world", fill=T,col="grey80", border="black",add=T)
 
 title("Global Distribution of Aesthetic Value", line=1,
       font.main=1, cex.main=1.5)
@@ -167,20 +174,22 @@ x1 <- aes_coefs$Q75
 y0 <- seq(1:nrow(aes_coefs))
 y1 <- seq(1:nrow(aes_coefs))
 segments(x0,y0,x1,y1, lwd=5)
-
+points(aes_coefs$Estimate, seq(1:nrow(aes_coefs)),pch=21,col="white",bg="white",cex=2)
 points(aes_coefs$Estimate, seq(1:nrow(aes_coefs)),pch=21,col=1,cex=2,
        bg=ifelse(aes_coefs$type=="Anthropogenic",anthro_color,env_color))
 
 abline(v=0, lwd=1.5, col=adjustcolor("black",alpha.f = 0.75), lty=2)
+h_line <- which(aes_coefs$type=="Environmental")[1]-0.5
+abline(h=h_line, col=adjustcolor("black",alpha.f = 0.75), lty=1)
 
 axis(2, at = seq(1:nrow(aes_coefs)), 
      labels = aes_coefs$variable,
      las=2, cex.axis=1.25)
 
-mtext(side=3, adj=-0.05, text="B", line=1.5, font=2, cex=1.5)
+mtext(side=3, adj=-0.25, text="b)", line=1.5, font=2, cex=1.25)
 
-legend("bottomright", legend=c("Anthropogenic","Environmental"),
-       bty="n",bg=NA, cex=1, pch=19, col=c(anthro_color,env_color))
+legend("bottomright", legend=c("Environmental","Anthropogenic"),
+       bty="n",bg=NA, cex=1, pch=19, col=c(env_color,anthro_color))
 
 
 ###########################
@@ -188,23 +197,24 @@ legend("bottomright", legend=c("Anthropogenic","Environmental"),
 ###########################
 
 resid_clim <- c(-max(abs(residual_IDW$residual)),max(abs(residual_IDW$residual)))
+
 scatter2D(residual_IDW$lon, residual_IDW$lat, pch=19,
           colvar = residual_IDW$residual, 
           cex=0,
-          col=(jet(n=nrow(residual_IDW))),
-          clim=resid_clim,
+          col=(plasma(n=nrow(residual_IDW))),          clim=resid_clim,
           xlab="Longitude", ylab="Latitude", 
           cex.lab=1.5)
 rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = adjustcolor("grey80",alpha=0.2))
 scatter2D(residual_IDW$lon, residual_IDW$lat, pch=19,
           colvar = residual_IDW$residual, cex=0.75,
-          col=(jet(n=nrow(residual_IDW))),
+          col=(plasma(n=nrow(residual_IDW))),
           clim=resid_clim,
           add=TRUE)
 mtext(side=4, line=1, text="Residual Value")
-mtext(side=3, adj=-0.05, text="C", line=1.5, font=2, cex=1.5)
+mtext(side=3, adj=-0.05, text="c)", line=1.5, font=2, cex=1.25)
 
-map(database = "world", fill=T, col="grey85", border="grey85",add=T)
+map(database = "world", fill=T, col="grey80", border="grey80",add=T)
+#map(database = "world", fill=T, col="grey70", border="grey70",add=T)
 
 title("Deviation from Expected Given Species Richness",line=1,
       font.main=1, cex.main=1.5)
@@ -236,20 +246,22 @@ x1 <- deviation_coefs$Q75
 y0 <- seq(1:nrow(deviation_coefs))
 y1 <- seq(1:nrow(deviation_coefs))
 segments(x0,y0,x1,y1, lwd=5)
-
+points(deviation_coefs$Estimate, seq(1:nrow(deviation_coefs)),pch=21,col="white",bg="white",cex=2)
 points(deviation_coefs$Estimate, seq(1:nrow(deviation_coefs)),pch=21,col=1,cex=2,
        bg=ifelse(deviation_coefs$type=="Anthropogenic",anthro_color,env_color))
 
 abline(v=0, lwd=1.5, col=adjustcolor("black",alpha.f = 0.75), lty=2)
+h_line <- which(aes_coefs$type=="Environmental")[1]-0.5
+abline(h=h_line, col=adjustcolor("black",alpha.f = 0.75), lty=1)
 
 axis(2, at = seq(1:nrow(deviation_coefs)), 
      labels = deviation_coefs$variable,
      las=2, cex.axis=1.25)
 
-mtext(side=3, adj=-0.05, text="D", line=1.5, font=2, cex=1.5)
+mtext(side=3, adj=-0.25, text="d)", line=1.5, font=2, cex=1.25)
 
-legend("bottomright", legend=c("Anthropogenic","Environmental"),
-       bty="n",bg=NA, cex=1, pch=19, col=c(anthro_color,env_color))
+legend("bottomright", legend=c("Environmental","Anthropogenic"),
+       bty="n",bg=NA, cex=1, pch=19, col=c(env_color,anthro_color))
 
 
 

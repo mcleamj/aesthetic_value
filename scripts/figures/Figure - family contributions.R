@@ -76,15 +76,15 @@ MPA_effect_summary$log_beauty <- log(MPA_effect_summary$aesthe_score)
 top_MPA_families <- MPA_effect_summary %>%
   filter(Estimate >= quantile(MPA_effect_summary$Estimate, prob=0.75))
 
-plot_colors <- variablecol(colvar = top_MPA_families$aesthe_score, col = plasma(n=nrow(top_MPA_families)), clim=range(family_beauty$aesthe_score))
+plot_colors <- variablecol(colvar = top_MPA_families$aesthe_score, col = jet(n=nrow(top_MPA_families)), clim=range(family_beauty$aesthe_score))
 
 graphics.off()
 par(mar=c(4,12,4,4))
 scatter2D(top_MPA_families$Estimate, seq(1:nrow(top_MPA_families)), xlim=c(min(top_MPA_families$Q10,na.rm = TRUE),max(top_MPA_families$Q90,na.rm = TRUE)),
           ylim=c(min(seq(1:nrow(top_MPA_families))-0.25),max(seq(1:nrow(top_MPA_families))+0.25)),cex=0,
           xlab="MPA Effect Size", ylab=NA, yaxt = "n",
-          cex.lab=1.25, colvar = top_MPA_families$aesthe_score, col=plasma(n=nrow(top_MPA_families)))
-mtext(side=4, "Average Aesthetic Value", line=2, cex=1.1)
+          cex.lab=1.25, colvar = top_MPA_families$aesthe_score, col=jet(n=nrow(top_MPA_families)))
+mtext(side=4, "Average Aesthetic Score", line=2, cex=1.1)
 title("", line=1,
       font.main=1, cex.main=1.5)
 

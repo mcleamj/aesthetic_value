@@ -79,24 +79,24 @@ graphics.off()
 par(oma=c(0,0,0,0))
 par(mar=c(4,4,4,4))
 
-m2 <- matrix(c(1,1,1,1,1,1,1,1,1,2,2,2,
-               1,1,1,1,1,1,1,1,1,2,2,2,
-               1,1,1,1,1,1,1,1,1,2,2,2,
-               1,1,1,1,1,1,1,1,1,2,2,2,
-               1,1,1,1,1,1,1,1,1,2,2,2,
-               1,1,1,1,1,1,1,1,1,2,2,2),
+m2 <- matrix(c(1,1,1,1,1,1,1,1,1,2,2,
+               1,1,1,1,1,1,1,1,1,2,2,
+               1,1,1,1,1,1,1,1,1,2,2,
+               1,1,1,1,1,1,1,1,1,2,2,
+               1,1,1,1,1,1,1,1,1,2,2,
+               1,1,1,1,1,1,1,1,1,2,2),
              nrow = 6, 
-             ncol= 12,
+             ncol= 11,
              byrow = TRUE)
 
-layout(m2, widths = c(1,1,1,1,1,1,1,1,1,1,1,1),
+layout(m2, widths = c(1,1,1,1,1,1,1,1,1,1,1),
        heights = c(1,1,1,1,1,1))
 
 layout.show(n=2)
 
 
 #################
-## VERSION 3   ##
+## FIGURE  ##
 #################
 
 col_range <- c( max(abs(regions$Slope))*-1 , max(abs(regions$Slope)) )
@@ -114,6 +114,8 @@ scatter2D(regions$SiteLongitude, regions$SiteLatitude, pch=19,
           cex=0,xlim=c(-180,180),ylim=c(-60,80),
           xlab="Longitude (°)",ylab="Latitude (°)",
           cex.axis=1.25,cex.lab=1.25)
+corners <- par("usr")
+rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = adjustcolor("grey80",alpha=0.2))
 plot(regions, border="black", col=regions$color,add=TRUE)
 mtext(text="Effect Size",
       side=4,line=1.5,cex=1)
@@ -136,5 +138,5 @@ scatter2D(regions$Slope, regions$SiteLatitude, pch=19,
           colkey = FALSE)
 
 points(regions$Slope, regions$SiteLatitude, pch=21,
-       cex=1.5, col="black", bg=regions$color,
+       cex=2, col="black", bg=regions$color,
        xlab="Effect Size", ylab="Latitude")

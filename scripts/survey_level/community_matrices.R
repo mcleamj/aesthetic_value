@@ -16,13 +16,18 @@ library(DataCombine)
 rm(list = ls())
 
 ## Import list of species with aesthethic values
-esth_sp <- read.csv(here::here("data", "esthe_table.csv"))
+#esth_sp <- read.csv(here::here("data", "esthe_table.csv"))
+esth_sp <- read.csv(here::here("data", "aesthe_langlois_2022.csv"),
+                    sep=";")
 
 ## Any duplicated species?
 esth_sp$sp_name[which(duplicated(esth_sp$sp_name))]
 
 ## Import cleaned RLS data - errors removed, species names corrected
 survey_spcompo <- readRDS(here::here("data", "RLS_fishdata_cleaned.rds"))
+length(unique(survey_spcompo$SurveyID))
+length(unique(survey_spcompo$SiteCode))
+
 names(survey_spcompo)
 length(unique(survey_spcompo$species))
 survey_spcompo$SurveyID <- as.character(survey_spcompo$SurveyID)

@@ -43,5 +43,8 @@ vignettes/*.pdf
 /data/BIG_FILES/
 /outputs/BIG_FILES/
 
-# Old files
-/old_files
+# Other files
+/other_files
+
+# Figures and Tables
+/figures_tables

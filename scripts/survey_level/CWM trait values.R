@@ -80,24 +80,30 @@ str(species_traits)
 
 cwm_traits_cont <- functcomp(as.matrix(select(species_traits, c(BodySize, Trophic.Level))), as.matrix(survey_sp_occ))
 cwm_traits_cat <-  functcomp(as.matrix(select(species_traits, Diet)), as.matrix(survey_sp_occ),CWM.type = "all")
+# NEED TO TRANSFORM THE CATEGORICAL TRAITS
+cwm_traits_cat <- asin(sqrt(cwm_traits_cat))
 
 cwm_traits <- data.frame(cwm_traits_cont, cwm_traits_cat)                       
 
 
-# PCA FOR TROPHIC GUILD STRUCTURE
+# PCA FOR TROPHIC GUILD COMPOSITION
 
-trophic_PCA <- prcomp(cwm_traits_cat, scale. = FALSE)
+trophic_PCA <- prcomp(cwm_traits_cat, scale. = TRUE)
+# NEED TO SCALE BECAUSE
+# WE COMBINE BODY SIZE AND TROPHIC LEVEL WITH PROPORTIONS
 
 fviz_pca_var(trophic_PCA, col.var = "contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE)
+             repel = FALSE, col.circle = NA)
+fviz_pca_biplot(trophic_PCA, invisible ="ind")
+
 ## GROUP DATA
 
-trophic_structure <- data.frame(cwm_traits,
+trophic_composition <- data.frame(cwm_traits,
                             trophic_PCA$x[,1:4]) %>%
   dplyr::rename(PC1_trophic = PC1, PC2_trophic = PC2,
          PC3_trophic = PC3, PC4_trophic = PC4)
-trophic_structure$SurveyID <- rownames(trophic_structure)
+trophic_composition$SurveyID <- rownames(trophic_composition)
 
-saveRDS(trophic_structure, "outputs/trophic_structure.rds")
+saveRDS(trophic_composition, "outputs/trophic_composition.rds")
 

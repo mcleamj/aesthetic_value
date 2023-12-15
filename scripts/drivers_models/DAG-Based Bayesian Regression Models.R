@@ -420,7 +420,7 @@ MPA_model <- brm(MPA_model_formula,
 saveRDS(MPA_model, "outputs/BIG_FILES/MPA_model.rds")
 MPA_model <- read_rds("outputs/BIG_FILES/MPA_model.rds")
 
-r2_bayes(MPA_model)
+#r2_bayes(MPA_model)
 
 MPA_post <- as.data.frame(as.matrix(MPA_model)) %>%
   select('b_MPANotake','b_MPARestrictedtake')
@@ -629,58 +629,67 @@ posterior_summary(dag_output, probs=c(0.10,0.90))
 performance::check_model(full_model) # GOOD
 graphics.off()
 plot(full_model)
+r2_bayes(full_model)
 
 # SST MODEL
 performance::check_model(sst_model) # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATITUDE AND SST
 graphics.off()
-plot(sst_model)
+plot(sst_model, variable="b_sst_mean")
+r2_bayes(sst_model)
 
 # NPP MODEL
 performance::check_model(NPP_model) # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATIUDE AND SST
 graphics.off()
-plot(NPP_model)
+plot(NPP_model,variable="b_NPP_mean")
+r2_bayes(NPP_model)
 
 # DEPTH MODEL
 performance::check_model(depth_model) # GOOD
 graphics.off()
-plot(depth_model)
+plot(depth_model, variable="b_Depth")
+r2_bayes(depth_model)
 
 # GRAVITY MODEL
 performance::check_model(gravity_model) # GOOD
 graphics.off()
-plot(gravity_model)
+plot(gravity_model, variable="b_gravtot2")
+r2_bayes(gravity_model)
 
 # MPA MODEL
 performance::check_model(MPA_model) # GOOD
 graphics.off()
-plot(MPA_model)
+plot(MPA_model, variable=c("b_MPANotake","b_MPARestrictedtake"))
+r2_bayes(MPA_model)
 
 # BENTHIC MODEL 1
 performance::check_model(benthic_PC1_model) # GOOD, HIGH VIF FROM LATITUDE AND SST
 graphics.off()
-plot(benthic_PC1_model)
+plot(benthic_PC1_model,variable="b_PC1_imputed")
+r2_bayes(benthic_PC1_model)
 
 # BENTHIC MODEL 2
 performance::check_model(benthic_PC2_model) # GOOD, HIGH VIF FROM LAT AND SST
 graphics.off()
-plot(benthic_PC2_model)
+plot(benthic_PC2_model, variable="b_PC2_imputed")
+r2_bayes(benthic_PC2_model)
 
 # DHW MODEL
 performance::check_model(DHW_model) # GOOD, HIGH VIF FROM LAT AND SST
 graphics.off()
-plot(DHW_model)
+plot(DHW_model, variable="b_dhw_mean")
+r2_bayes(DHW_model)
 
 # HDI MODEL
 performance::check_model(HDI_model) # GOOD, HIGH VIF FROM LAT AND SST
 graphics.off()
-plot(HDI_model)
+plot(HDI_model,variable="b_HDI2017")
+r2_bayes(HDI_model)
 
 # FISHERIES DEPENDENCY MODEL
 performance::check_model(fshd_model) # GOOD
 graphics.off()
-plot(fshd_model)
-
-
+plot(fshd_model, variable="b_fshD")
+r2_bayes(fshd_model)
 
 
 ########################################################
@@ -874,16 +883,16 @@ benthic_PC1_richness_formula <-
      
      family=gaussian()) 
 
-benthic_PC1_ricness_model <- brm(benthic_PC1_richness_formula,
+benthic_PC1_richness_model <- brm(benthic_PC1_richness_formula,
                          data=standardized_data,
                          chains=4, iter=4000, cores=ncores,
                          c(set_prior("normal(0,3)", class = "b"),
                            set_prior("normal(0,3)", class="Intercept")))
 
-saveRDS(benthic_PC1_ricness_model, "outputs/BIG_FILES/benthic_PC1_ricness_model.rds")
-benthic_PC1_ricness_model <- read_rds("outputs/BIG_FILES/benthic_PC1_ricness_model.rds")
+saveRDS(benthic_PC1_richness_model, "outputs/BIG_FILES/benthic_PC1_richness_model.rds")
+benthic_PC1_richness_model <- read_rds("outputs/BIG_FILES/benthic_PC1_richness_model.rds")
 
-benthic_PC1_richness_post <- as.data.frame(as.matrix(benthic_PC1_ricness_model))  %>%
+benthic_PC1_richness_post <- as.data.frame(as.matrix(benthic_PC1_richness_model))  %>%
   select('b_PC1_imputed')
 
 #################################
@@ -1026,56 +1035,67 @@ ggpubr::ggarrange(
 performance::check_model(sst_richness_model) # 
 graphics.off()
 plot(sst_richness_model)
+r2_bayes(sst_richness_model)
 
 # NPP MODEL
 performance::check_model(NPP_richness__model) # 
 graphics.off()
-plot(NPP_richness__model)
+plot(NPP_richness_model)
+r2_bayes(NPP_richness_model)
 
 # DEPTH MODEL
 performance::check_model(depth_richness_model) # 
 graphics.off()
 plot(depth_richness_model)
+r2_bayes(depth_richness_model)
 
 # BIOMASS MODEL
 performance::check_model(Biom_richness_model) # 
 graphics.off()
 plot(Biom_richness_model)
+r2_bayes(Biom_richness_model)
 
 # GRAVITY MODEL
 performance::check_model(gravity_richness_model) # 
 graphics.off()
 plot(gravity_richness_model)
+r2_bayes(gravity_richness_model)
 
 # MPA MODEL
 performance::check_model(MPA_richness_model) # 
 graphics.off()
 plot(MPA_richness_model)
+r2_bayes(MPA_richness_model)
 
 # BENTHIC MODEL 1
 performance::check_model(benthic_PC1_richness_model) # 
 graphics.off()
 plot(benthic_PC1_richness_model)
+r2_bayes(benthic_PC1_richness_model)
 
 # BENTHIC MODEL 2
 performance::check_model(benthic_PC2_richness_model) # 
 graphics.off()
 plot(benthic_PC2_richness_model)
+r2_bayes(benthic_PC2_richness_model)
 
 # DHW MODEL
 performance::check_model(DHW_richness_model) # 
 graphics.off()
 plot(DHW_richness_model)
+r2_bayes(DHW_richness_model)
 
 # HDI MODEL
 performance::check_model(HDI_richness_model) # 
 graphics.off()
 plot(HDI_richness_model)
+r2_bayes(HDI_richness_model)
 
 # FISHERIES DEPENDENCY MODEL
 performance::check_model(fshd_richness_model) # 
 graphics.off()
 plot(fshd_richness_model)
+r2_bayes(fshd_richness_model)
 
 
 ########################################################
