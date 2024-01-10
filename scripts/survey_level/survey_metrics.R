@@ -77,11 +77,15 @@ library(ggplot2)
       
 #FIGURE 1 ----
  
-  aesthe_species <- read.csv(here::here("outputs", "aesthe_species.csv"))
-  survey_aesth <- read.csv(here::here("outputs", "survey_aesth.csv"))
+  aesthe_species <- read.csv2(here::here("outputs", "aesthe_species.csv"))
+  survey_aesth <- read.csv2(here::here("outputs", "survey_aesth.csv"))
   sp_pres_matrix <- readRDS(here::here("outputs", "sp_pres_matrix.rds"))
   
-  #FIG 1 a 
+  #FIG 1 a #TO DO subset only species present in sp_pres_matrix.rds
+  
+  sp_survey <- gsub("_"," ",names(sp_pres_matrix)[-1])
+  
+  aesthe_species <- aesthe_species[aesthe_species$sp_name%in%sp_survey,]
   
   aesthe_species$rank <- rank(aesthe_species$aesthe_effect)
   
