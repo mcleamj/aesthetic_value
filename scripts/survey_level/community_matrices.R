@@ -17,17 +17,21 @@ rm(list = ls())
 
 ## Import list of species with aesthethic values
 #esth_sp <- read.csv(here::here("data", "esthe_table.csv"))
-esth_sp <- read.csv(here::here("data", "aesthe_langlois_2022.csv"),
+# esth_sp <- read.csv(here::here("data", "aesthe_langlois_2022.csv"),
+#                     sep=";")
+esth_sp <- read.csv(here::here("outputs", "aesthe_species.csv"),
                     sep=";")
+
 
 ## Any duplicated species?
 esth_sp$sp_name[which(duplicated(esth_sp$sp_name))]
 
 ## Import cleaned RLS data - errors removed, species names corrected
 survey_spcompo <- readRDS(here::here("data", "RLS_fishdata_cleaned.rds"))
-length(unique(survey_spcompo$SurveyID))
-length(unique(survey_spcompo$SiteCode))
+length(unique(survey_spcompo$SurveyID)) # 7017 SURVYES
+length(unique(survey_spcompo$SiteCode)) # 3529 SITES
 
+# Replace spaces with underscores
 names(survey_spcompo)
 length(unique(survey_spcompo$species))
 survey_spcompo$SurveyID <- as.character(survey_spcompo$SurveyID)
@@ -35,12 +39,14 @@ survey_spcompo$species <- gsub(" ", "_", survey_spcompo$species)
 survey_spcompo$TAXONOMIC_NAME <- gsub(" ", "_", survey_spcompo$TAXONOMIC_NAME)
 survey_spcompo$SPECIES_NAME <- gsub(" ", "_", survey_spcompo$SPECIES_NAME)
 
+esth_sp$sp_name <- gsub(" ", "_", esth_sp$sp_name)
+
 ## How many species in each data set?
 length(unique(survey_spcompo$species))  #2655 in RLS
-length(unique(esth_sp$sp_name)) #2461 in aesthetic scores
+length(unique(esth_sp$sp_name)) #2417 in aesthetic scores
 
 ## How many species in common between the two data sets?
-length(which(esth_sp$sp_name %in% survey_spcompo$species)) #2298 species in common
+length(which(esth_sp$sp_name %in% survey_spcompo$species)) #2254 species in common
 
 # How many species have an aesthetic value score but not observed in RLS?
 # Which species?
@@ -52,7 +58,7 @@ length(missing_esth_sp$missing) #163 species
 missing_survey_sp <- data.frame(missing=survey_spcompo$species[which(!survey_spcompo$species %in% esth_sp$sp_name)])
 missing_survey_sp <- missing_survey_sp %>%
   distinct()
-length(missing_survey_sp$missing) # 357 species
+length(missing_survey_sp$missing) # 401 species
 
 # Which are actual species and which are Genus spp?
 missing_survey_genera <- missing_survey_sp %>%
@@ -61,9 +67,9 @@ length(missing_survey_genera$missing) #164 Genus spp.
 
 missing_survey_sp <- missing_survey_sp %>%
   filter(!grepl("spp",missing))
-length(missing_survey_sp$missing) #193 species
+length(missing_survey_sp$missing) #237 actual species don't have an aesthetic score
 
-## Are missing aesthetic value species found in the old (outdated) RLS species names?
+## Are species with aesthetic scores but not found in RLS found in the old (outdated) RLS species names?
 length(which(missing_esth_sp$missing %in% survey_spcompo$SPECIES_NAME)) # at least 18 of them are
 
 # Change the outdated esth_sp name to the updated RLS name
@@ -74,7 +80,7 @@ sp_ref <- survey_spcompo %>%
 esth_sp <- FindReplace(esth_sp, "sp_name", sp_ref, from="SPECIES_NAME", to="species",
             exact = T, vector = F)
 
-length(unique(esth_sp$sp_name)) - length(which(esth_sp$sp_name %in% survey_spcompo$species)) # 20 have been replaced
+length(unique(esth_sp$sp_name)) - length(which(esth_sp$sp_name %in% survey_spcompo$species)) # 20 (163-143) have been replaced
 
 ## Subset the two data sets to only matching species
 survey_spcompo <- survey_spcompo[which(survey_spcompo$species %in% esth_sp$sp_name),]

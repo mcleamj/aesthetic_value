@@ -88,14 +88,27 @@ cwm_traits <- data.frame(cwm_traits_cont, cwm_traits_cat)
 
 # PCA FOR TROPHIC GUILD COMPOSITION
 
-trophic_PCA <- prcomp(cwm_traits_cat, scale. = TRUE)
-# NEED TO SCALE BECAUSE
-# WE COMBINE BODY SIZE AND TROPHIC LEVEL WITH PROPORTIONS
+trophic_PCA <- prcomp(cwm_traits_cat, scale. = FALSE)
 
 fviz_pca_var(trophic_PCA, col.var = "contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = FALSE, col.circle = NA)
-fviz_pca_biplot(trophic_PCA, invisible ="ind")
+             repel = FALSE)
+
+# DO I NEED TO ROTATE PC AXES FOR POSITIVE
+# RELATIONSHIP WITH AESTHETIC?
+# YES FLIP PC1 AND PC2
+
+trophic_PCA$x[,1] <- trophic_PCA$x[,1]*-1
+trophic_PCA$rotation[,1] <- trophic_PCA$rotation[,1] * -1
+
+trophic_PCA$x[,2] <- trophic_PCA$x[,2]*-1
+trophic_PCA$rotation[,2] <- trophic_PCA$rotation[,2] * -1
+
+# RE PLOT PCA
+fviz_pca_var(trophic_PCA, col.var = "contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = FALSE)
+
 
 ## GROUP DATA
 
