@@ -78,7 +78,7 @@ library(ggplot2)
 #FIGURE 1 ----
  
   aesthe_species <- read.csv2(here::here("outputs", "aesthe_species.csv"))
-  survey_aesth <- read.csv2(here::here("outputs", "survey_aesth.csv"))
+  survey_aesth <- read.csv(here::here("outputs", "survey_aesth.csv"))
   sp_pres_matrix <- readRDS(here::here("outputs", "sp_pres_matrix.rds"))
   
   #FIG 1 a #TO DO subset only species present in sp_pres_matrix.rds
@@ -89,8 +89,8 @@ library(ggplot2)
   
   aesthe_species$rank <- rank(aesthe_species$aesthe_effect)
   
-    nneg <- sum(aesthe_species$aesthe_effect < 0) # 1763 species have a negative effect
-    npos <- sum(aesthe_species$aesthe_effect > 0) # 654 species have a positive effect
+    nneg <- sum(aesthe_species$aesthe_effect < 0) # 1628 species have a negative effect
+    npos <- sum(aesthe_species$aesthe_effect > 0) # 644 species have a positive effect
     
     ex <- c("Chaetodontoplus septentrionalis","Calloplesiops altivelis","Paracanthurus hepatus",
             "Chelmonops curiosus","Acanthurus blochii","Scarus rivulatus","Pseudolabrus guentheri",
@@ -119,7 +119,7 @@ library(ggplot2)
       geom_vline(xintercept=nneg, linetype="dashed", 
                  color = "gray", size=0.8)+
       geom_text(x=100, y=-0.003, label=paste("n=",nneg),size=4,col="#7D7D7C")+
-      geom_text(x=2400, y=+0.003, label=paste("n=",npos),size=4,col="#7D7D7C")+
+      geom_text(x=2200, y=+0.003, label=paste("n=",npos),size=4,col="#7D7D7C")+
       geom_point(aes(x=rank[sp_name%in%ex[1]],
                      y=aesthe_effect[sp_name%in%ex[1]]),
                  shape = 21, colour = colsp, fill = "white",size=size_cr)+
@@ -227,7 +227,7 @@ library(ggplot2)
              y = "Predicted aesthetic score")+
         geom_point(aes(x=lowsc$nb_species,y=lowsc$aesthe_survey),colour="tomato",size=3)+
         geom_point(aes(x=upsc$nb_species,y=upsc$aesthe_survey),colour="tomato",size=3)+
-        geom_text(x=48.5, y=lowsc$aesthe_survey, label="low",size=4,col="#7D7D7C")+
+        geom_text(x=48.5, y=lowsc$aesthe_survey-55, label="low",size=4,col="#7D7D7C")+
         geom_text(x=31.5, y=upsc$aesthe_survey, label="high",size=4,col="#7D7D7C")
         
 

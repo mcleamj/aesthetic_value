@@ -11,12 +11,16 @@
 ##################################################################################################
 
 
-#Get species list with esthe scores 
+#Get species list with esthe scores from Langlois et al. 2022 and update species names 
 
   aesthe_species <- read.csv2(here::here("data", "aesthe_langlois_2022.csv"))
+  name_changes <- read.csv(here::here("data", "name_changes.csv"))
+
+  aesthe_species$sp_name[aesthe_species$sp_name%in%name_changes$old]=name_changes$new
+  
   aesthe_species$sp_name <- as.character(gsub("_"," ",aesthe_species$sp_name))
   aesthe_species$aesthe_score <- as.numeric(aesthe_species$aesthe_score)
-  
+
 # Compute the aesthe contribution of each species
   # with parameters from Tribot, A.S, Deter, J., Claverie, T., Guillhaumon, F., Villeger, S., & Mouquet, N. (2019). Species diversity and composition drive the aesthetic value of coral reef fish assemblages. Biology letters, 15, 20190703, doi:10.1098/rsbl.2019.0703
   # positive and negative effect are relative to the espected effect computed with the species 
