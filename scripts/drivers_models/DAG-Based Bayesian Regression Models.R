@@ -729,6 +729,40 @@ ggplot(sst_ridge, aes(x = draws, y = model)) +
   geom_density_ridges() 
 
 
+###########################
+## NPP SENSITIVITY MODEL ##
+###########################
+
+NPP_sens_formula <- bf(log(aesthe_survey) ~ NPP_mean +
+                         BO_nitrate +
+                         BO_phosphate +
+                         sst_mean +
+                         wave_energy +
+                         as.factor(Temperature_Zone) +
+                         (1 | Country/SiteCode),
+                       
+                       family=gaussian())
+
+NPP_sens_model <- brm(NPP_sens_formula,
+                      data=standardized_data,
+                      chains=4, iter=4000, cores=ncores,
+                      c(set_prior("normal(0,3)", class = "b"),
+                        set_prior("normal(0,3)", class="Intercept")))
+
+NPP_sens_post <- as.data.frame(as.matrix(NPP_sens_model)) %>%
+  select('b_NPP_mean')
+
+performance::check_model(NPP_sens_model, check="vif")
+
+# RIDGE PLOT THE TWO POSTERIORS
+
+NPP_ridge <- data.frame(draws=c(NPP_post$b_NPP_mean, NPP_sens_post$b_NPP_mean),
+                        model=rep(c("original","sensitivity"),each=nrow(NPP_post)))
+
+ggplot(NPP_ridge, aes(x = draws, y = model)) +
+  geom_density_ridges() 
+
+
 
 ########################################################
 ########################################################
