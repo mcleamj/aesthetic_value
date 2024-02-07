@@ -82,6 +82,8 @@ esth_sp <- FindReplace(esth_sp, "sp_name", sp_ref, from="SPECIES_NAME", to="spec
 
 length(unique(esth_sp$sp_name)) - length(which(esth_sp$sp_name %in% survey_spcompo$species)) # 20 (163-143) have been replaced
 
+#20 NAMES ARE OUTDATED IN THE AESTHETIC VALUE DATA
+
 ## Subset the two data sets to only matching species
 survey_spcompo <- survey_spcompo[which(survey_spcompo$species %in% esth_sp$sp_name),]
 esth_sp <- esth_sp[which(esth_sp$sp_name %in% survey_spcompo$species),]

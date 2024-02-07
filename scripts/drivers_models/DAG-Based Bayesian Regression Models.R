@@ -625,6 +625,8 @@ posterior_summary(dag_output, probs=c(0.10,0.90))
 ## MODEL CHECKING ##
 ####################
 
+theme_set(theme_classic(base_size = 6))
+
 # CAUSAL SALAD MODEL
 performance::check_model(full_model) # GOOD
 graphics.off()
@@ -632,13 +634,13 @@ plot(full_model)
 r2_bayes(full_model)
 
 # SST MODEL
-performance::check_model(sst_model) # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATITUDE AND SST
+performance::check_model(sst_model, check = "vif") # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATITUDE AND SST
 graphics.off()
 plot(sst_model, variable="b_sst_mean")
 r2_bayes(sst_model)
 
 # NPP MODEL
-performance::check_model(NPP_model) # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATIUDE AND SST
+performance::check_model(NPP_model,check = "vif") # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATIUDE AND SST
 graphics.off()
 plot(NPP_model,variable="b_NPP_mean")
 r2_bayes(NPP_model)
@@ -690,6 +692,42 @@ performance::check_model(fshd_model) # GOOD
 graphics.off()
 plot(fshd_model, variable="b_fshD")
 r2_bayes(fshd_model)
+
+
+
+##############################################
+## SENSITIVITY TESTS FOR SST AND NPP MODELS 
+## THESE MODELS HAVE HIGH VIF
+## DUE TO COLLINEARITY WITH LATITUDE
+## CHECK MODEL RESULT WITH LATITUDE REMOVED
+##############################################
+
+
+sst_sens_formula <- bf(log(aesthe_survey) ~ sst_mean +
+                         as.factor(Temperature_Zone) +
+                         (1 | Country/SiteCode),
+                       
+                       family=gaussian())
+
+sst_sense_model <- brm(sst_sens_formula,
+                       data=standardized_data,
+                       chains=4, iter=4000, cores=ncores,
+                       c(set_prior("normal(0,3)", class = "b"),
+                         set_prior("normal(0,3)", class="Intercept")))
+
+sst_sens_post <- as.data.frame(as.matrix(sst_sense_model)) %>%
+  select('b_sst_mean')
+
+performance::check_model(sst_sense_model, check="vif")
+
+# RIDGE PLOT THE TWO POSTERIORS
+
+sst_ridge <- data.frame(draws=c(sst_post$b_sst_mean, sst_sens_post$b_sst_mean),
+                        model=rep(c("original","sensitivity"),each=nrow(sst_post)))
+
+ggplot(sst_ridge, aes(x = draws, y = model)) +
+  geom_density_ridges() 
+
 
 
 ########################################################
