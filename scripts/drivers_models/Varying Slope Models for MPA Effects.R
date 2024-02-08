@@ -14,7 +14,6 @@
 ######################
 
 if(!require(data.table)){install.packages("data.table"); library(data.table)}
-if(!require(rgdal)){install.packages("rgdal"); library(rgdal)}
 if(!require(mapproj)){install.packages("mapproj"); library(mapproj)}
 if(!require(plot3D)){install.packages("plot3D"); library(plot3D)}
 if(!require(ggplot2)){install.packages("ggplot2"); library(ggplot2)}
@@ -31,61 +30,7 @@ if(!require(stringr)){install.packages("stringr"); library(stringr)}
 if(!require(dplyr)){install.packages("dplyr"); library(dplyr)}
 
 ##############################
-## IMPORT DATA "MODEL DATA" ##
-##############################
-
-model_data <- readRDS("data/model_data.rds")
-
-names(model_data)
-
-model_data$MPA <- as.factor(model_data$MPA)
-
-##################################
-## ADD NEW IMPUTED BENTHIC DATA ##
-##################################
-
-benthic_PCA <- read_rds("outputs/RLS_benthic_PCA_imputed.rds")
-benthic_PCA <- benthic_PCA %>%
-  select(SurveyID, PC1_imputation, PC2_imputation) %>%
-  rename(PC1_imputed = PC1_imputation, PC2_imputed = PC2_imputation)
-
-model_data <- merge(model_data, benthic_PCA, by = "SurveyID", all=T)
-
-#####################################
-## IMPORT AND ATTACH AESTHETIC DATA #
-#####################################
-
-aaesthe_surveyetic_data <- read.csv("outputs/survey_aesth.csv")
-
-model_data <- merge(model_data, aaesthe_surveyetic_data, by="SurveyID")
-
-##################################
-## PARALLEL SETTINGS FOR MODELS ##
-##################################
-
-ncores = detectCores()
-rstan_options(auto_write = TRUE)
-options(mc.cores = parallel::detectCores())
-
-#####################################################
-## SCALE ALL THE NUMERIC PREDICTORS TO MEAN 0 SD 2 ##
-#####################################################
-
-z_score_2sd <- function(x){ (x - mean(x,na.rm=T)) / (2*sd(x,na.rm=T))}
-
-z_vars <- model_data %>%
-  select_if(is.numeric) %>%
-  select(-any_of(c("SurveyID","SiteLongitude","SiteLatitude","aesthe_survey"))) %>%
-  colnames()
-
-standardized_data <- model_data %>%
-  mutate_if(colnames(model_data) %in% z_vars, z_score_2sd)
-
-##############################################
-## MODEL USING SAME FORMAT FOR EFFECT OF MPA
-## BUT WITH VARYING SLOPE FOR ECOREGION
-##############################################
-
+## IMPORT DATA "MODEL DATA"
 # RE-DO THIS ANALYSIS FOR ONLY ECOREGIONS WHERE THERE
 # ARE BOTH FISHED AND NO TAKE SITES
 

@@ -32,7 +32,7 @@ if(!require(readr)){install.packages("readr"); library(readr)}
 if(!require(tibble)){install.packages("tibble"); library(tibble)}
 if(!require(dplyr)){install.packages("dplyr"); library(dplyr)}
 
-library(worms)
+library(worrms)
 
 ##############################
 ## IMPORT DATA "MODEL DATA" ##
@@ -459,7 +459,7 @@ fun_div_model <- brm(fun_div_model_formula,
                        set_prior("normal(0,3)", class="Intercept")))
 
 saveRDS(fun_div_model, "outputs/BIG_FILES/MPA_mechanisms_fun_div.rds")
-fun_div_model <- read_rds(fun_div_model, "outputs/BIG_FILES/MPA_mechanisms_fun_div.rds")
+fun_div_model <- read_rds("outputs/BIG_FILES/MPA_mechanisms_fun_div.rds")
 
 fun_div_post <- as.data.frame(as.matrix(fun_div_model)) %>%
   select('b_MPANotake') 
@@ -494,7 +494,7 @@ phylo_div_model <- brm(phylo_div_model_formula,
                          set_prior("normal(0,3)", class="Intercept")))
 
 saveRDS(phylo_div_model, "outputs/BIG_FILES/MPA_mechanisms_phylo_div.rds")
-phylo_div_model <- read_rds(phylo_div_model, "outputs/BIG_FILES/MPA_mechanisms_phylo_div.rds")
+phylo_div_model <- read_rds("outputs/BIG_FILES/MPA_mechanisms_phylo_div.rds")
 
 phylo_div_post <- as.data.frame(as.matrix(phylo_div_model)) %>%
   select('b_MPANotake')
@@ -528,7 +528,7 @@ benthic_PC1_model <- brm(benthic_PC1_model_formula,
                            set_prior("normal(0,3)", class="Intercept")))
 
 saveRDS(benthic_PC1_model, "outputs/BIG_FILES/MPA_mechanisms_benthic_1.rds")
-benthic_PC1_model <- read_rds(benthic_PC1_model, "outputs/BIG_FILES/MPA_mechanisms_benthic_1.rds")
+benthic_PC1_model <- read_rds("outputs/BIG_FILES/MPA_mechanisms_benthic_1.rds")
 
 benthic_PC1_post <- as.data.frame(as.matrix(benthic_PC1_model)) %>%
   select('b_MPANotake') 
@@ -562,7 +562,7 @@ benthic_PC2_model <- brm(benthic_PC2_model_formula,
                            set_prior("normal(0,3)", class="Intercept")))
 
 saveRDS(benthic_PC2_model, "outputs/BIG_FILES/MPA_mechanisms_benthic_2.rds")
-benthic_PC2_model <- read_rds(benthic_PC2_model, "outputs/BIG_FILES/MPA_mechanisms_benthic_2.rds")
+benthic_PC2_model <- read_rds("outputs/BIG_FILES/MPA_mechanisms_benthic_2.rds")
 
 benthic_PC2_post <- as.data.frame(as.matrix(benthic_PC2_model)) %>%
   select('b_MPANotake') 
@@ -598,7 +598,7 @@ trophic_PC1_model <- brm(trophic_PC1_model_formula,
                            set_prior("normal(0,3)", class="Intercept")))
 
 saveRDS(trophic_PC1_model, "outputs/BIG_FILES/MPA_mechanisms_trophic_1.rds")
-trophic_PC1_model <- read_rds(trophic_PC1_model, "outputs/BIG_FILES/MPA_mechanisms_trophic_1.rds")
+trophic_PC1_model <- read_rds("outputs/BIG_FILES/MPA_mechanisms_trophic_1.rds")
 
 trophic_PC1_post <- as.data.frame(as.matrix(trophic_PC1_model)) %>%
   select('b_MPANotake')
@@ -632,7 +632,7 @@ trophic_PC2_model <- brm(trophic_PC2_model_formula,
                            set_prior("normal(0,3)", class="Intercept")))
 
 saveRDS(trophic_PC2_model, "outputs/BIG_FILES/MPA_mechanisms_trophic_2.rds")
-trophic_PC2_model <- read_rds(trophic_PC2_model, "outputs/BIG_FILES/MPA_mechanisms_trophic_2.rds")
+trophic_PC2_model <- read_rds("outputs/BIG_FILES/MPA_mechanisms_trophic_2.rds")
 
 trophic_PC2_post <- as.data.frame(as.matrix(trophic_PC2_model)) %>%
   select('b_MPANotake')
@@ -668,7 +668,7 @@ Taxo_PC1_model <- brm(Taxo_PC1_model_formula,
                         set_prior("normal(0,3)", class="Intercept")))
 
 saveRDS(Taxo_PC1_model, "outputs/BIG_FILES/MPA_mechanisms_taxonomic_1.rds")
-Taxo_PC1_model <- read_rds(Taxo_PC1_model, "outputs/BIG_FILES/MPA_mechanisms_taxonomic_1.rds")
+Taxo_PC1_model <- read_rds("outputs/BIG_FILES/MPA_mechanisms_taxonomic_1.rds")
 
 Taxo_PC1_post <- as.data.frame(as.matrix(Taxo_PC1_model)) %>%
   select('b_MPANotake')
@@ -702,7 +702,7 @@ Taxo_PC2_model <- brm(Taxo_PC2_model_formula,
                         set_prior("normal(0,3)", class="Intercept")))
 
 saveRDS(Taxo_PC2_model, "outputs/BIG_FILES/MPA_mechanisms_taxonomic_2.rds")
-Taxo_PC2_model <- read_rds(Taxo_PC2_model, "outputs/BIG_FILES/MPA_mechanisms_taxonomic_2.rds")
+Taxo_PC2_model <- read_rds("outputs/BIG_FILES/MPA_mechanisms_taxonomic_2.rds")
 
 Taxo_PC2_post <- as.data.frame(as.matrix(Taxo_PC2_model)) %>%
   select('b_MPANotake')
@@ -734,6 +734,7 @@ mcmc_intervals(model_outputs)
 model_estimates %>%
   filter(variable != "MPA.Total.Causal.Effect") %>%
   summarise(sum((median)))
+
 
 
 

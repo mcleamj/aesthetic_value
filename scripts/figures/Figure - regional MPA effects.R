@@ -49,13 +49,14 @@ eco_no_take$ECOREGION <- rownames(eco_no_take)
 ##########################################
 
 ecoregion_info <- model_data %>%
-  select(Ecoregion, SiteLongitude, SiteLatitude) %>%
+  dplyr::select(Ecoregion, SiteLongitude, SiteLatitude) %>%
   group_by(Ecoregion) %>%
   summarise_all(.funs=mean) %>%
   rename(ECOREGION = Ecoregion)
 
 # IMPORT SHAPEFILE OF ECOREGIONS
-regions <- readOGR("data/MEOW-TNC", "meow_ecos")
+#regions <- readOGR("data/MEOW-TNC", "meow_ecos")
+regions <- read_sf("data/MEOW-TNC", "meow_ecos")
 regions <- regions[regions$ECOREGION %in% eco_no_take$ECOREGION,]
 
 # COMBINE ECOREGION EFFECT SIZES AND INFORMATION WITH SHAPEFILE INFO

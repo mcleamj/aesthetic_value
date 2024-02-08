@@ -26,6 +26,8 @@ esth_sp <- read.csv(here::here("outputs", "aesthe_species.csv"),
 ## Any duplicated species?
 esth_sp$sp_name[which(duplicated(esth_sp$sp_name))]
 
+# Remove duplicates
+
 ## Import cleaned RLS data - errors removed, species names corrected
 survey_spcompo <- readRDS(here::here("data", "RLS_fishdata_cleaned.rds"))
 length(unique(survey_spcompo$SurveyID)) # 7017 SURVYES

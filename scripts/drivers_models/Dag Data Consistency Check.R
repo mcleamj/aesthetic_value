@@ -23,7 +23,9 @@ if(!require(readr)){install.packages("readr"); library(readr)}
 # DOWNLOAD THE DAG #
 ####################
 
-DAG <- downloadGraph("dagitty.net/mxttk25")
+#DAG <- downloadGraph("dagitty.net/mxttk25") # ORIGINAL, OUTDATED DAG
+DAG <- downloadGraph("dagitty.net/m6WdXviAT") # UPDATED FEB 2024
+
 names(DAG)
 
 ##############################
@@ -37,8 +39,6 @@ model_data$Temperature_Zone <- as.factor(model_data$Temperature_Zone)
 names(model_data)
 
 model_data$MPA <- as.factor(model_data$MPA)
-
-model_data$sst_range <- model_data$sst_max - model_data$sst_min
 
 ######################################
 ## IMPORT AND ADD DIVERSITY METRICS ##
@@ -56,9 +56,9 @@ trophic <- read_rds("outputs/trophic_structure.rds")
 
 model_data <- merge(model_data, trophic, by="SurveyID")
 
-################################################
-## IMPORT AND ADD TAXONOMIC STRUCTURE METRICS ##
-################################################
+##################################################
+## IMPORT AND ADD TAXONOMIC COMPOSITION METRICS ##
+##################################################
 
 taxo_structure <- read_rds("outputs/taxo_structure.rds")
 taxo_structure$Taxo_PC1 <- taxo_structure$Taxo_PC1*-1 #ROTATE FOR POS RELATIONSHIP
@@ -99,12 +99,6 @@ model_data <- do.call(data.frame,lapply(model_data, function(x) replace(x, is.in
 
 num_vars <- select_if(model_data, is.numeric)
 num_vars$SurveyID <- NULL
-
-# graphics.off()
-# par(mfrow=c(4,4))
-# for(i in 1:ncol(num_vars)){
-#   hist(num_vars[,i], main=colnames(num_vars)[i])
-# }
 
 graphics.off()
 par(mfrow=c(3,3))
@@ -167,15 +161,16 @@ names(model_data)[which(colnames(model_data)=="Biomass")] <- "Reef Fish Biomass"
 names(model_data)[which(colnames(model_data)=="sst_mean")] <- "Sea Surface Temperature"
 names(model_data)[which(colnames(model_data)=="BO_parmean")] <- "Solar Irradiance"
 names(model_data)[which(colnames(model_data)=="wave_energy")] <- "Wave Energy"
-names(model_data)[which(colnames(model_data)=="fun_entropy")] <- "fun/phylo_diversity"
-#names(model_data)[which(colnames(model_data)=="phylo_entropy")] <- "fun/phylo_diversity"
+names(model_data)[which(colnames(model_data)=="fun_richness")] <- "Functional/Phylogenetic Diversity"
+#names(model_data)[which(colnames(model_data)=="phylo_richness")] <- "Functional/Phylogenetic Diversity"
 names(model_data)[which(colnames(model_data)=="BO_nitrate")] <- "Nitrate"
 names(model_data)[which(colnames(model_data)=="BO_phosphate")] <- "Phosphate"
-names(model_data)[which(colnames(model_data)=="taxo_entropy")] <- "taxonomic_diversity"
+names(model_data)[which(colnames(model_data)=="taxo_richness")] <- "taxonomic_diversity"
 names(model_data)[which(colnames(model_data)=="PC1_trophic")] <- "trophic_structure"
 names(model_data)[which(colnames(model_data)=="HDI2017")] <- "Human Development Index"
 names(model_data)[which(colnames(model_data)=="aesthe_survey")] <- "aesthetic_value"
 names(model_data)[which(colnames(model_data)=="abs_latitude")] <- "Latitude"
+names(model_data)[which(colnames(model_data)=="Taxo_PC1")] <- "taxonomic_composition"
 
 #####################################
 ## SUBSET TO TROPICS OR TEMPERATE? ##
