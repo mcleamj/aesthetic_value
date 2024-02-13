@@ -215,7 +215,7 @@ library(ggplot2)
     lowsc <- temp[which(temp$aesthe_survey == min(temp$aesthe_survey)), c("SurveyID", "aesthe_survey", "nb_species")]
       
       b <- ggplot(survey_aesth, ggplot2::aes(y=aesthe_survey,x = nb_species)) +
-        geom_point(col="royalblue1",alpha=0.5) +
+        geom_point(col="#A0A0FA",alpha=0.5) +
         theme_bw()+
         theme(axis.text.x = element_text(size = 10),
               axis.title.x = element_text(size = 14),
@@ -223,12 +223,12 @@ library(ggplot2)
               axis.title.y = element_text(size = 14))+
         geom_line(aes(y = aesthe_SR_survey, x = nb_species),col = "#7D7D7C",size=1.5)+
         geom_line(aes(y = aesthe_SR_survey, x = nb_species),col = "white",size=0.5)+
-        labs(x = "Number of species in the survey",
-             y = "Predicted aesthetic score")+
+        labs(x = "Surveys species richness",
+             y = "Survey aesthetic values")+
         geom_point(aes(x=lowsc$nb_species,y=lowsc$aesthe_survey),colour="tomato",size=3)+
         geom_point(aes(x=upsc$nb_species,y=upsc$aesthe_survey),colour="tomato",size=3)+
-        geom_text(x=48.5, y=lowsc$aesthe_survey-55, label="low",size=4,col="#7D7D7C")+
-        geom_text(x=31.5, y=upsc$aesthe_survey, label="high",size=4,col="#7D7D7C")
+        geom_text(x=46, y=lowsc$aesthe_survey-55, label="B",size=4,col="#7D7D7C")+
+        geom_text(x=34, y=upsc$aesthe_survey, label="A",size=4,col="#7D7D7C")
         
 
     ##Fig.1c 
@@ -243,15 +243,15 @@ library(ggplot2)
       low_sc_effect  <-  cbind.data.frame(effect=aesthe_species$aesthe_effect[which(aesthe_species$sp_name %in% gsub("_"," ",sp_lowsc))])
       high_sc_effect <-  cbind.data.frame(effect=aesthe_species$aesthe_effect[which(aesthe_species$sp_name %in% gsub("_"," ",sp_upsc))])
           
-      low_sc_effect$score_type  <- "low"
-      high_sc_effect$score_type <- "high"
+      low_sc_effect$score_type  <- "B"
+      high_sc_effect$score_type <- "A"
           
       comp_surv <- rbind(low_sc_effect, high_sc_effect)
       
       c <- ggplot(comp_surv, aes(x = score_type, y = effect))+
         geom_boxplot(fill="white",width = .5, outlier.shape = NA) + 
         ylab("Species aesthetic effects") +
-        xlab("Survey")+
+        xlab("Surveys")+
         theme_bw()+
         theme(axis.text.x = element_text(size = 10),
               axis.title.x = element_text(size = 14),
@@ -264,7 +264,7 @@ library(ggplot2)
           position = position_jitter(seed = 1, width = .1)) +
         geom_hline(yintercept=0, linetype="dashed", 
                    color = "gray", size=1)+
-        scale_x_discrete(labels = c("High", "Low"))+
+        scale_x_discrete(labels = c("A", "B"))+
         ggplot2::theme(axis.line.x  = ggplot2::element_line(linetype = "blank"),
                        axis.ticks.x = ggplot2::element_blank())
 
@@ -279,6 +279,11 @@ library(ggplot2)
     ggsave(here::here("figures_tables","fig_1.png"), plot = fig1,
              width = 11, height = 8, dpi = 300, units = "in", device='png')
       
+    library(gridExtra)
+    fig_1 <- gridExtra::arrangeGrob(b,c,ncol=2)
+    ggsave(file=here::here("figures_tables","fig_1.tiff"), fig_1,width = 24, height = 10, dpi = 300, units = "cm", device='tiff') 
+    
+    
 # ----     
  
   
