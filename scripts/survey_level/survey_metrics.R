@@ -1,5 +1,5 @@
 ###################################################################################################
-#'  Compute aesthe at the survey level
+#'  Compute community aesthe values at the survey level
 #'
 #' @author Nicolas Mouquet , \email{nicolas.mouquet@@cnrs.fr}
 #' @author Matthew McLean, \email {mcleamj@@gmail.com},
@@ -7,7 +7,7 @@
 #'         
 #' 
 #' Produce the file survey_aesth.csv which contains predicted aesthetic values for each survey 
-#' Produce fig_1.png  
+#' Produce fig_1 b,c  
 #'        
 #' @date 2022/06/22
 ##################################################################################################
@@ -74,217 +74,93 @@ library(ggplot2)
       write.csv(survey_aesth, here::here("outputs", "survey_aesth.csv"), row.names = FALSE)
 
 # ---- 
-      
-#FIGURE 1 ----
- 
-  aesthe_species <- read.csv2(here::here("outputs", "aesthe_species.csv"))
-  survey_aesth <- read.csv(here::here("outputs", "survey_aesth.csv"))
-  sp_pres_matrix <- readRDS(here::here("outputs", "sp_pres_matrix.rds"))
-  
-  #FIG 1 a #TO DO subset only species present in sp_pres_matrix.rds
-  
-  sp_survey <- gsub("_"," ",names(sp_pres_matrix)[-1])
-  
-  aesthe_species <- aesthe_species[aesthe_species$sp_name%in%sp_survey,]
-  
-  aesthe_species$rank <- rank(aesthe_species$aesthe_effect)
-  
-    nneg <- sum(aesthe_species$aesthe_effect < 0) # 1628 species have a negative effect
-    npos <- sum(aesthe_species$aesthe_effect > 0) # 644 species have a positive effect
     
-    ex <- c("Chaetodontoplus septentrionalis","Calloplesiops altivelis","Paracanthurus hepatus",
-            "Chelmonops curiosus","Acanthurus blochii","Scarus rivulatus","Pseudolabrus guentheri",
-            "Scolopsis ghanam","Sarpa salpa","Salmo salar","Arripis truttacea","Sardina pilchardus")
-    
-    colsp <- "#40403F"
-    size_cr <- 6
-    font_cr <- 3
-    
-    ex_fl <- c("Chaetodontoplus_septentrionalis_A_1.png","Calloplesiops_altivelis_A_2.png","Paracanthurus_hepatus_A_3.png",
-               "Chelmonops_curiosus_A_2.png","Acanthurus_blochii_A_1.png","Scarus_rivulatus_M_2.png",
-               "Pseudolabrus_guentheri_A_2.png","Scolopsis_ghanam_A_3.png","Sarpa_salpa_A_2.png",
-               "Salmo_salar_A_2.png","Arripis_truttacea_A_1.png","Sardina_pilchardus_A_1.png")
-  
-    a <- ggplot(aesthe_species, ggplot2::aes(y=aesthe_effect,x = rank)) +
-      geom_point(col="royalblue1",alpha=0.5)+
-      theme_bw()+
-      xlab("Ranks") + ylab("Net species aesthetic effects")+
-      theme(axis.text.x = element_text(size = 10),
-            axis.title.x = element_text(size = 14),
-            axis.text.y = element_text(size = 10),
-            axis.title.y = element_text(size = 14))+
-      ylim(-0.04,0.04)+
-      geom_hline(yintercept=0, linetype="dashed", 
-                 color = "gray", size=0.8)+
-      geom_vline(xintercept=nneg, linetype="dashed", 
-                 color = "gray", size=0.8)+
-      geom_text(x=100, y=-0.003, label=paste("n=",nneg),size=4,col="#7D7D7C")+
-      geom_text(x=2200, y=+0.003, label=paste("n=",npos),size=4,col="#7D7D7C")+
-      geom_point(aes(x=rank[sp_name%in%ex[1]],
-                     y=aesthe_effect[sp_name%in%ex[1]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[1]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[1]], 
-                label="1",size=font_cr,col=colsp)+
-      geom_point(aes(x=rank[sp_name%in%ex[2]],
-                     y=aesthe_effect[sp_name%in%ex[2]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[2]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[2]], 
-                label="2",size=font_cr,col=colsp)+
-      geom_point(aes(x=rank[sp_name%in%ex[3]],
-                     y=aesthe_effect[sp_name%in%ex[3]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[3]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[3]], 
-                label="3",size=font_cr,col=colsp)+
-      geom_point(aes(x=rank[sp_name%in%ex[4]],
-                     y=aesthe_effect[sp_name%in%ex[4]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[4]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[4]], 
-                label="4",size=font_cr,col=colsp)+
-      geom_point(aes(x=rank[sp_name%in%ex[5]],
-                     y=aesthe_effect[sp_name%in%ex[5]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[5]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[5]], 
-                label="5",size=font_cr,col=colsp)+
-      geom_point(aes(x=rank[sp_name%in%ex[6]],
-                     y=aesthe_effect[sp_name%in%ex[6]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[6]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[6]], 
-                label="6",size=font_cr,col=colsp)+
-      geom_point(aes(x=rank[sp_name%in%ex[7]],
-                     y=aesthe_effect[sp_name%in%ex[7]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[7]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[7]], 
-                label="7",size=font_cr,col=colsp)+
-      geom_point(aes(x=rank[sp_name%in%ex[8]],
-                     y=aesthe_effect[sp_name%in%ex[8]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[8]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[8]], 
-                label="8",size=font_cr,col=colsp)+
-      geom_point(aes(x=rank[sp_name%in%ex[9]],
-                     y=aesthe_effect[sp_name%in%ex[9]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[9]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[9]], 
-                label="9",size=font_cr,col=colsp)+
-      geom_point(aes(x=rank[sp_name%in%ex[10]],
-                     y=aesthe_effect[sp_name%in%ex[10]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[10]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[10]], 
-                label="10",size=font_cr,col=colsp)+
-      geom_point(aes(x=rank[sp_name%in%ex[11]],
-                     y=aesthe_effect[sp_name%in%ex[11]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[11]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[11]], 
-                label="11",size=font_cr,col=colsp)+
-      geom_point(aes(x=rank[sp_name%in%ex[12]],
-                     y=aesthe_effect[sp_name%in%ex[12]]),
-                 shape = 21, colour = colsp, fill = "white",size=size_cr)+
-      geom_text(x=aesthe_species$rank[aesthe_species$sp_name%in%ex[12]], 
-                y=aesthe_species$aesthe_effect[aesthe_species$sp_name%in%ex[12]], 
-                label="12",size=font_cr,col=colsp)
-    
-  
-  #FIG 1 b,c 
-  
-  ##add the ranks and the diff in aesthetic (between aesthe_survey and aesthe_SR_survey)
-    survey_aesth$rank <- rank(survey_aesth$aesthe_survey)
-    #survey_aesth$ecart_richness <- survey_aesth$aesthe_survey - survey_aesth$aesthe_SR_survey
-    
-  ##isolate two survey with same number of species but high and low aesthetic scores
-  ##will be used in fig.1b and c
-    
-  ##Fig.1b
+#FIGURE 1b,c ----
+#Fig1a was produced by other means     
 
-    temp  <- survey_aesth[which(survey_aesth$aesthe_survey > 3500),]
-    temp  <- temp[which(temp$aesthe_survey < 3600),]
-    temp  <- temp[which(temp$nb_species ==40),]
-    upsc <- temp[, c("SurveyID", "aesthe_survey", "nb_species")]
-    upsc <- upsc[1,]
+    aesthe_species <- read.csv2(here::here("outputs", "aesthe_species.csv"))
+    survey_aesth <- read.csv(here::here("outputs", "survey_aesth.csv"))
+    sp_pres_matrix <- readRDS(here::here("outputs", "sp_pres_matrix.rds"))
     
-    temp <- survey_aesth[which(survey_aesth$nb_species == upsc$nb_species),]
-    lowsc <- temp[which(temp$aesthe_survey == min(temp$aesthe_survey)), c("SurveyID", "aesthe_survey", "nb_species")]
+    ##subset only species present in sp_pres_matrix.rds
+    
+    sp_survey <- gsub("_"," ",names(sp_pres_matrix)[-1])
+    aesthe_species <- aesthe_species[aesthe_species$sp_name%in%sp_survey,]
+
+    ##isolate two survey with same number of species but high and low aesthetic scores
+    ##will be used in fig.1b and c
+    
+      temp  <- survey_aesth[which(survey_aesth$aesthe_survey > 3500),]
+      temp  <- temp[which(temp$aesthe_survey < 3600),]
+      temp  <- temp[which(temp$nb_species ==40),]
+      upsc <- temp[, c("SurveyID", "aesthe_survey", "nb_species")]
+      upsc <- upsc[1,]
       
-      b <- ggplot(survey_aesth, ggplot2::aes(y=aesthe_survey,x = nb_species)) +
-        geom_point(col="#A0A0FA",alpha=0.5) +
-        theme_bw()+
-        theme(axis.text.x = element_text(size = 10),
-              axis.title.x = element_text(size = 14),
-              axis.text.y = element_text(size = 10),
-              axis.title.y = element_text(size = 14))+
-        geom_line(aes(y = aesthe_SR_survey, x = nb_species),col = "#7D7D7C",size=1.5)+
-        geom_line(aes(y = aesthe_SR_survey, x = nb_species),col = "white",size=0.5)+
-        labs(x = "Surveys species richness",
-             y = "Survey aesthetic values")+
-        geom_point(aes(x=lowsc$nb_species,y=lowsc$aesthe_survey),colour="tomato",size=3)+
-        geom_point(aes(x=upsc$nb_species,y=upsc$aesthe_survey),colour="tomato",size=3)+
-        geom_text(x=46, y=lowsc$aesthe_survey-55, label="B",size=4,col="#7D7D7C")+
-        geom_text(x=34, y=upsc$aesthe_survey, label="A",size=4,col="#7D7D7C")
+      temp <- survey_aesth[which(survey_aesth$nb_species == upsc$nb_species),]
+      lowsc <- temp[which(temp$aesthe_survey == min(temp$aesthe_survey)), c("SurveyID", "aesthe_survey", "nb_species")]
+    
+      ###Fig.1b
+    
+        b <- ggplot(survey_aesth, ggplot2::aes(y=aesthe_survey,x = nb_species)) +
+          geom_point(col="#A0A0FA",alpha=0.5) +
+          theme_bw()+
+          theme(axis.text.x = element_text(size = 10),
+                axis.title.x = element_text(size = 14),
+                axis.text.y = element_text(size = 10),
+                axis.title.y = element_text(size = 14))+
+          geom_line(aes(y = aesthe_SR_survey, x = nb_species),col = "#7D7D7C",size=1.5)+
+          geom_line(aes(y = aesthe_SR_survey, x = nb_species),col = "white",size=0.5)+
+          labs(x = "Surveys species richness",
+               y = "Survey aesthetic values")+
+          geom_point(aes(x=lowsc$nb_species,y=lowsc$aesthe_survey),colour="tomato",size=3)+
+          geom_point(aes(x=upsc$nb_species,y=upsc$aesthe_survey),colour="tomato",size=3)+
+          geom_text(x=46, y=lowsc$aesthe_survey-55, label="B",size=4,col="#7D7D7C")+
+          geom_text(x=34, y=upsc$aesthe_survey, label="A",size=4,col="#7D7D7C")
         
-
-    ##Fig.1c 
-          
-      sp_pres <- as.data.frame(sp_pres_matrix)
-      rownames(sp_pres)=sp_pres$SurveyID
-      sp_pres <- sp_pres[,-1]
+      ###Fig.1c 
+    
+        sp_pres <- as.data.frame(sp_pres_matrix)
+        rownames(sp_pres)=sp_pres$SurveyID
+        sp_pres <- sp_pres[,-1]
+        
+        sp_lowsc <- colnames(sp_pres)[sp_pres[which(rownames(sp_pres)%in%lowsc$SurveyID),]>0]
+        sp_upsc <- colnames(sp_pres)[sp_pres[which(rownames(sp_pres)%in%upsc$SurveyID),]>0]
+        
+        low_sc_effect  <-  cbind.data.frame(effect=aesthe_species$aesthe_effect[which(aesthe_species$sp_name %in% gsub("_"," ",sp_lowsc))])
+        high_sc_effect <-  cbind.data.frame(effect=aesthe_species$aesthe_effect[which(aesthe_species$sp_name %in% gsub("_"," ",sp_upsc))])
+        
+        low_sc_effect$score_type  <- "B"
+        high_sc_effect$score_type <- "A"
+        
+        comp_surv <- rbind(low_sc_effect, high_sc_effect)
+        
+        c <- ggplot(comp_surv, aes(x = score_type, y = effect))+
+          geom_boxplot(fill="white",width = .5, outlier.shape = NA) + 
+          ylab("Species aesthetic effects") +
+          xlab("Surveys")+
+          theme_bw()+
+          theme(axis.text.x = element_text(size = 10),
+                axis.title.x = element_text(size = 14),
+                axis.text.y = element_text(size = 10),
+                axis.title.y = element_text(size = 14))+
+          ylim(-0.04,0.04)+
+          ggdist::stat_halfeye(adjust = .5,width = .6,.width = 0,
+                               justification = -.3,alpha = .2,fill='blue',point_colour = NA)+
+          geom_point(size = 1,alpha = .2,col="blue",
+                     position = position_jitter(seed = 1, width = .1)) +
+          geom_hline(yintercept=0, linetype="dashed", 
+                     color = "gray", size=1)+
+          scale_x_discrete(labels = c("A", "B"))+
+          ggplot2::theme(axis.line.x  = ggplot2::element_line(linetype = "blank"),
+                         axis.ticks.x = ggplot2::element_blank())
+        
+        ###Assemble Fig 1 b and c and save 
   
-      sp_lowsc <- colnames(sp_pres)[sp_pres[which(rownames(sp_pres)%in%lowsc$SurveyID),]>0]
-      sp_upsc <- colnames(sp_pres)[sp_pres[which(rownames(sp_pres)%in%upsc$SurveyID),]>0]
-      
-      low_sc_effect  <-  cbind.data.frame(effect=aesthe_species$aesthe_effect[which(aesthe_species$sp_name %in% gsub("_"," ",sp_lowsc))])
-      high_sc_effect <-  cbind.data.frame(effect=aesthe_species$aesthe_effect[which(aesthe_species$sp_name %in% gsub("_"," ",sp_upsc))])
-          
-      low_sc_effect$score_type  <- "B"
-      high_sc_effect$score_type <- "A"
-          
-      comp_surv <- rbind(low_sc_effect, high_sc_effect)
-      
-      c <- ggplot(comp_surv, aes(x = score_type, y = effect))+
-        geom_boxplot(fill="white",width = .5, outlier.shape = NA) + 
-        ylab("Species aesthetic effects") +
-        xlab("Surveys")+
-        theme_bw()+
-        theme(axis.text.x = element_text(size = 10),
-              axis.title.x = element_text(size = 14),
-              axis.text.y = element_text(size = 10),
-              axis.title.y = element_text(size = 14))+
-        ylim(-0.04,0.04)+
-        ggdist::stat_halfeye(adjust = .5,width = .6,.width = 0,
-          justification = -.3,alpha = .2,fill='blue',point_colour = NA)+
-        geom_point(size = 1,alpha = .2,col="blue",
-          position = position_jitter(seed = 1, width = .1)) +
-        geom_hline(yintercept=0, linetype="dashed", 
-                   color = "gray", size=1)+
-        scale_x_discrete(labels = c("A", "B"))+
-        ggplot2::theme(axis.line.x  = ggplot2::element_line(linetype = "blank"),
-                       axis.ticks.x = ggplot2::element_blank())
-
-    ##Assemble Fig 1 and save 
-      
-    library("cowplot")
-      fig1 <- ggdraw() +
-        draw_plot(a, x = 0, y = .4, width = 1, height = .6) +
-        draw_plot(b, x = 0, y = 0, width = .5, height = .4) +
-        draw_plot(c, x = 0.5, y = 0, width = 0.5, height = 0.4)
-      
-    ggsave(here::here("figures_tables","fig_1.png"), plot = fig1,
-             width = 11, height = 8, dpi = 300, units = "in", device='png')
-      
-    library(gridExtra)
-    fig_1 <- gridExtra::arrangeGrob(b,c,ncol=2)
-    ggsave(file=here::here("figures_tables","fig_1.tiff"), fig_1,width = 24, height = 10, dpi = 300, units = "cm", device='tiff') 
+          library(gridExtra)
+          fig_1 <- gridExtra::arrangeGrob(b,c,ncol=2)
+          ggsave(file=here::here("figures_tables","fig_1.tiff"), fig_1,width = 24, height = 10, dpi = 300, units = "cm", device='tiff') 
     
-    
-# ----     
+# ----
  
   
     
