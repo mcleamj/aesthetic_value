@@ -20,7 +20,8 @@ figures: https://docs.google.com/document/d/1r4qGwa2xJKDPo24HSP9H05pNCAT_VrS4sW-
 ## Figures 
   The following Figures and Tables can be reproduced with the script indicated in brackets (all in `script/`):
   
-  FIG_1.png is in `survey_level/survey_metrics.R`
+  FIG_1 a has been produced by other means and is in folder /figures_tables
+  FIG_1 b and c were produced by `survey_level/survey_metrics.R`
 
 
 Enjoy!
