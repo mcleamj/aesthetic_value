@@ -114,7 +114,8 @@ axis(2, at = seq(1:nrow(top_MPA_families)),
      labels = top_MPA_families$family,
      las=2, cex.axis=1)
 
-title("Family Contributions to MPA Effect")
+title("Family Contributions to MPA Effect",
+      line=1, font.main=1, cex.main=1.5)
 
 
 

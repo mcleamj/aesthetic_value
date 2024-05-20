@@ -1,8 +1,10 @@
 ###################################################################################################
 #'  SCRIPT TO COMPUTE TAXO/FUN/PHYLO DIVERSITY METRICS AT THE SURVEY LEVEL
+#'  
 #' @author Mattia Ghilardi \email {mattia.ghilardi@@leibniz-zmt.de}
 #'         Matthew McLean, \email {mcleamj@@gmail.com}
-#' 
+#'         
+#' @date updated May 2024
 
 ##################################################################################################
 

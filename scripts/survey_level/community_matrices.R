@@ -1,5 +1,6 @@
 ###################################################################################################
-#'  Information at the survey scale
+#'  CODE TO CREATE MATRICES OF OCCURENCE, ABUNDANCE, AND  BIOMASS
+#'  FOR EACH SURVEY IN THE RLS DATA
 #'
 #' @author Matthew McLean, \email {mcleamj@@gmail.com},
 #'         Juliette Langlois, \email{juliette.a.langlois@@gmail.com},
@@ -7,7 +8,7 @@
 #'         
 #'         
 #'
-#' @date 2021/08/11
+#' @date updated May 2024
 ##################################################################################################
 
 library(tidyverse)
@@ -16,9 +17,6 @@ library(DataCombine)
 rm(list = ls())
 
 ## Import list of species with aesthethic values
-#esth_sp <- read.csv(here::here("data", "esthe_table.csv"))
-# esth_sp <- read.csv(here::here("data", "aesthe_langlois_2022.csv"),
-#                     sep=";")
 esth_sp <- read.csv(here::here("outputs", "aesthe_species.csv"),
                     sep=";")
 
@@ -58,26 +56,26 @@ length(which(esth_sp$sp_name %in% survey_spcompo$species)) #2270 species in comm
 # How many species have an aesthetic value score but not observed in RLS?
 # Which species?
 missing_esth_sp <- data.frame(missing=esth_sp$sp_name[which(!esth_sp$sp_name %in% survey_spcompo$species)])
-length(missing_esth_sp$missing) #145 species
+length(missing_esth_sp$missing) 
 
 # How many species observed in RLS but don't have an aesthetic value score?
 # Which species?
 missing_survey_sp <- data.frame(missing=survey_spcompo$species[which(!survey_spcompo$species %in% esth_sp$sp_name)])
 missing_survey_sp <- missing_survey_sp %>%
   distinct()
-length(missing_survey_sp$missing) # 385 species
+length(missing_survey_sp$missing) 
 
 # Which are actual species and which are Genus spp?
 missing_survey_genera <- missing_survey_sp %>%
   filter(grepl("spp",missing))
-length(missing_survey_genera$missing) #159 Genus spp.
+length(missing_survey_genera$missing) 
 
 missing_survey_sp <- missing_survey_sp %>%
   filter(!grepl("spp",missing))
-length(missing_survey_sp$missing) #226 actual species don't have an aesthetic score
+length(missing_survey_sp$missing) 
 
 ## Are species with aesthetic scores but not found in RLS found in the old (outdated) RLS species names?
-length(which(missing_esth_sp$missing %in% survey_spcompo$SPECIES_NAME)) # NO - THIS HAS NOW BEEN CORRECTED
+length(which(missing_esth_sp$missing %in% survey_spcompo$SPECIES_NAME)) # NO - THIS HAS BEEN CORRECTED
 
 # # Change the outdated esth_sp name to the updated RLS name
 # sp_ref <- survey_spcompo %>%
@@ -88,7 +86,6 @@ length(which(missing_esth_sp$missing %in% survey_spcompo$SPECIES_NAME)) # NO - T
 #             exact = T, vector = F)
 # 
 # length(unique(esth_sp$sp_name)) - length(which(esth_sp$sp_name %in% survey_spcompo$species)) 
-
 
 ## Subset the two data sets to only matching species
 survey_spcompo <- survey_spcompo[which(survey_spcompo$species %in% esth_sp$sp_name),]

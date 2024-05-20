@@ -3,7 +3,7 @@
 #'  BASED ON DIRECTED ACYCLIC GRAPHS (DAG)
 #'  THE CORRESPONDING DAG CAN BE FOUND AT:
 #'  
-#'  http://dagitty.net/mSNlypU
+#'  http://dagitty.net/m6WdXviAT
 #'  
 #' @author Matthew McLean, \email {mcleamj@gmail.com},
 #'         
@@ -30,116 +30,11 @@ if(!require(performance)){install.packages("performance"); library(performance)}
 if(!require(tibble)){install.packages("tibble"); library(tibble)}
 if(!require(dplyr)){install.packages("dplyr"); library(dplyr)}
 
-##############################
-## IMPORT DATA "MODEL DATA" ##
-##############################
+################################
+## IMPORT PREPARED MODEL DATA ##
+################################
 
-model_data <- readRDS("data/model_data.rds")
-
-names(model_data)
-
-model_data$MPA <- as.factor(model_data$MPA)
-
-######################################
-## IMPORT AND ADD DIVERSITY METRICS ##
-######################################
-
-biodiv <- read_rds("outputs/survey_biodiversity.rds")
-
-model_data <- merge(model_data, biodiv, by="SurveyID")
-
-##################################
-## ADD NEW IMPUTED BENTHIC DATA ##
-##################################
-
-benthic_PCA <- read_rds("outputs/RLS_benthic_PCA_imputed.rds")
-benthic_PCA <- benthic_PCA %>%
-  select(SurveyID, PC1_imputation, PC2_imputation) %>%
-  dplyr::rename(PC1_imputed = PC1_imputation, PC2_imputed = PC2_imputation)
-
-model_data <- merge(model_data, benthic_PCA, by = "SurveyID", all=T)
-
-#############################################
-## REPLACE TEMPERATE BENTHIC 'DATA' WITH 0 ##
-#############################################
-
-model_data$PC1_imputed[model_data$Temperature_Zone=="Temperate"] <- 0
-model_data$PC2_imputed[model_data$Temperature_Zone=="Temperate"] <- 0
-
-#####################################
-## IMPORT AND ATTACH AESTHETIC DATA #
-#####################################
-
-aesthetic_survey_data <- read.csv("outputs/survey_aesth.csv")
-
-model_data <- merge(model_data, aesthetic_survey_data, by="SurveyID")
-
-############################
-## HOW MUCH MISSING DATA? ##
-############################
-
-sapply(model_data, function(x) paste(round(sum(is.na(x))/length(x),2)*100,"%",sep=""))
-
-###############################################
-## DO ANY VARIABLES NEED TO BE TRANSFORMED ? ##
-###############################################
-
-model_data <- do.call(data.frame,lapply(model_data, function(x) replace(x, is.infinite(x),NA)))
-
-num_vars <- select_if(model_data, is.numeric)
-num_vars$SurveyID <- NULL
-
-# graphics.off()
-# par(mfrow=c(4,4))
-# for(i in 1:ncol(num_vars)){
-#   hist(num_vars[,i], main=colnames(num_vars)[i])
-# }
-
-graphics.off()
-par(mfrow=c(3,3))
-for(i in 1:ncol(num_vars)){
-  
-  num_var_min <- min(num_vars[,i], na.rm=TRUE)
-  
-  num_var_log <- if(num_var_min > 0) { log(num_vars[,i])
-  } else {
-    log(num_vars[,i]+ceiling(abs(num_var_min))+1)
-  }
-  
-  hist(num_vars[,i], main=NA)
-  title(colnames(num_vars)[i])
-  
-  hist(num_var_log, main=NA)
-  title(paste("log", colnames(num_vars)[i]))
-  
-  hist((num_vars[,i]^2), main=NA)
-  title(paste("square", colnames(num_vars)[i]))
-  
-}
-
-# NB_SPECIES, TAXO_ENTROPY, GRAVITY, WAVE ENERGY, PHOSPHATE, NITRATE, NPP, BIOMASS ALL RIGHT-SKEWED, SHOULD BE LOG-TRANSFORMED
-# DEPTH AND DHW COULD POTENTIALLY BE TRANSFORMED AS WELL
-
-# Check minimum values
-dplyr::summarise(model_data,
-                 dplyr::across(c(nb_species, taxo_entropy, 
-                                 gravtot2, wave_energy, 
-                                 BO_phosphate, BO_nitrate,
-                                 NPP_mean, Biomass,
-                                 Depth, dhw_mean),
-                               min, na.rm=TRUE))
-# Transform data
-model_data <- dplyr::mutate(model_data,
-                             dplyr::across(c(nb_species, taxo_entropy, 
-                                             gravtot2, wave_energy, 
-                                             BO_phosphate, BO_nitrate,
-                                             NPP_mean, Biomass),
-                                           log))
-
-# CREATE ABSOLUTE VALUE OF LATITUDE
-model_data <- dplyr::mutate(model_data,
-                             abs_latitude = abs(SiteLatitude))
-
+standardized_data <-  read_rds("outputs/standardized_data.rds")
 
 ##################################
 ## PARALLEL SETTINGS FOR MODELS ##
@@ -149,22 +44,7 @@ ncores = detectCores()
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
-#####################################################
-## SCALE ALL THE NUMERIC PREDICTORS TO MEAN 0 SD 2 ##
-#####################################################
-
-z_score_2sd <- function(x){ (x - mean(x,na.rm=T)) / (2*sd(x,na.rm=T))}
-
-z_vars <- model_data %>%
-  select_if(is.numeric) %>%
-  select(-any_of(c("SurveyID","SiteLongitude","SiteLatitude","aesthe_survey"))) %>%
-  colnames()
-
-standardized_data <- model_data %>%
-  mutate_if(colnames(model_data) %in% z_vars, z_score_2sd)
-
-
-#'########################################################
+#'#######################################################
 #' NOW RUN THE INDIVIDUAL MODELS FOR EACH PREDICTOR
 #' ACCORDING TO THE DAG (USING MINIMAL ADJUSTMENT SET)
 #'#######################################################
@@ -341,8 +221,8 @@ MPA_post <- as.data.frame(as.matrix(MPA_model)) %>%
 
 benthic_PC1_model_formula <- 
   bf(log(aesthe_survey) ~ PC1_imputed +
-       Depth +
-       abs_latitude +
+       Depth + 
+       gravtot2 +
        MPA + 
        NPP_mean +
        sst_mean +
@@ -369,8 +249,8 @@ benthic_PC1_post <- as.data.frame(as.matrix(benthic_PC1_model))  %>%
 
 benthic_PC2_model_formula <- 
   bf(log(aesthe_survey) ~ PC2_imputed +
-       Depth +
-       abs_latitude +
+       Depth + 
+       gravtot2 +
        MPA + 
        NPP_mean +
        sst_mean +
@@ -475,74 +355,75 @@ posterior_summary(dag_output, probs=c(0.10,0.90))
 ## MODEL CHECKING ##
 ####################
 
-theme_set(theme_classic(base_size = 6))
-
 # SST MODEL
-performance::check_model(sst_model)#, check = "vif") # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATITUDE AND SST
-graphics.off()
-plot(sst_model, variable="b_sst_mean")
-r2_bayes(sst_model)
+performance::check_model(sst_model) 
+  #, check = "vif") # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATITUDE AND SST
+#graphics.off()
+#plot(sst_model, variable="b_sst_mean")
+#r2_bayes(sst_model)
 
 # NPP MODEL
-performance::check_model(NPP_model,check = "vif") # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATIUDE AND SST
-graphics.off()
-plot(NPP_model,variable="b_NPP_mean")
-r2_bayes(NPP_model)
+performance::check_model(NPP_model)
+# GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATIUDE AND SST
+#graphics.off()
+#plot(NPP_model,variable="b_NPP_mean")
+#r2_bayes(NPP_model)
 
 # DEPTH MODEL
 performance::check_model(depth_model) # GOOD
-graphics.off()
-plot(depth_model, variable="b_Depth")
-r2_bayes(depth_model)
+#graphics.off()
+#plot(depth_model, variable="b_Depth")
+#r2_bayes(depth_model)
 
 # GRAVITY MODEL
 performance::check_model(gravity_model) # GOOD
-graphics.off()
-plot(gravity_model, variable="b_gravtot2")
-r2_bayes(gravity_model)
+#graphics.off()
+#plot(gravity_model, variable="b_gravtot2")
+#r2_bayes(gravity_model)
 
 # MPA MODEL
 performance::check_model(MPA_model) # GOOD
-graphics.off()
-plot(MPA_model, variable=c("b_MPANotake","b_MPARestrictedtake"))
-r2_bayes(MPA_model)
+#graphics.off()
+#plot(MPA_model, variable=c("b_MPANotake","b_MPARestrictedtake"))
+#r2_bayes(MPA_model)
 
 # BENTHIC MODEL 1
 performance::check_model(benthic_PC1_model) # GOOD, HIGH VIF FROM LATITUDE AND SST
-graphics.off()
-plot(benthic_PC1_model,variable="b_PC1_imputed")
-r2_bayes(benthic_PC1_model)
+#graphics.off()
+#plot(benthic_PC1_model,variable="b_PC1_imputed")
+#r2_bayes(benthic_PC1_model)
 
 # BENTHIC MODEL 2
 performance::check_model(benthic_PC2_model) # GOOD, HIGH VIF FROM LAT AND SST
-graphics.off()
-plot(benthic_PC2_model, variable="b_PC2_imputed")
-r2_bayes(benthic_PC2_model)
+#graphics.off()
+#plot(benthic_PC2_model, variable="b_PC2_imputed")
+#r2_bayes(benthic_PC2_model)
 
 # DHW MODEL
 performance::check_model(DHW_model) # GOOD, HIGH VIF FROM LAT AND SST
-graphics.off()
-plot(DHW_model, variable="b_dhw_mean")
-r2_bayes(DHW_model)
+#graphics.off()
+#plot(DHW_model, variable="b_dhw_mean")
+#r2_bayes(DHW_model)
 
 # HDI MODEL
 performance::check_model(HDI_model) # GOOD, HIGH VIF FROM LAT AND SST
-graphics.off()
-plot(HDI_model,variable="b_HDI2017")
-r2_bayes(HDI_model)
+#graphics.off()
+#plot(HDI_model,variable="b_HDI2017")
+#r2_bayes(HDI_model)
 
 # FISHERIES DEPENDENCY MODEL
 performance::check_model(fshd_model) # GOOD
-graphics.off()
-plot(fshd_model, variable="b_fshD")
-r2_bayes(fshd_model)
+#graphics.off()
+#plot(fshd_model, variable="b_fshD")
+#r2_bayes(fshd_model)
 
 
 ##############################################
-## SENSITIVITY TESTS FOR SST AND NPP MODELS 
+## SENSITIVITY TESTS FOR MODELS WITH HIGH VIF
 ## THESE MODELS HAVE HIGH VIF
 ## DUE TO COLLINEARITY WITH LATITUDE
 ## CHECK MODEL RESULT WITH LATITUDE REMOVED
+## SST, NPP, DHW, HDI
 ##############################################
 
 sst_sens_formula <- bf(log(aesthe_survey) ~ sst_mean +
@@ -558,6 +439,7 @@ sst_sense_model <- brm(sst_sens_formula,
                          set_prior("normal(0,3)", class="Intercept")))
 
 saveRDS(sst_sense_model, "outputs/BIG_FILES/sst_sense_model.rds")
+sst_sense_model <- read_rds("outputs/BIG_FILES/sst_sense_model.rds")
 
 sst_sens_post <- as.data.frame(as.matrix(sst_sense_model)) %>%
   select('b_sst_mean')
@@ -569,8 +451,10 @@ performance::check_model(sst_sense_model, check="vif")
 sst_ridge <- data.frame(draws=c(sst_post$b_sst_mean, sst_sens_post$b_sst_mean),
                         model=rep(c("original","sensitivity"),each=nrow(sst_post)))
 
-ggplot(sst_ridge, aes(x = draws, y = model)) +
-  geom_density_ridges() 
+ggplot(sst_ridge, aes(x = draws, y = model, fill=model)) +
+  geom_density_ridges() +
+  ggtitle("SST Effect Sizes")
+
 
 ###########################
 ## NPP SENSITIVITY MODEL ##
@@ -593,6 +477,7 @@ NPP_sens_model <- brm(NPP_sens_formula,
                         set_prior("normal(0,3)", class="Intercept")))
 
 saveRDS(NPP_sens_model, "outputs/BIG_FILES/NPP_sens_model.rds")
+NPP_sens_model <- read_rds("outputs/BIG_FILES/NPP_sens_model.rds")
 
 NPP_sens_post <- as.data.frame(as.matrix(NPP_sens_model)) %>%
   select('b_NPP_mean')
@@ -604,8 +489,80 @@ performance::check_model(NPP_sens_model, check="vif")
 NPP_ridge <- data.frame(draws=c(NPP_post$b_NPP_mean, NPP_sens_post$b_NPP_mean),
                         model=rep(c("original","sensitivity"),each=nrow(NPP_post)))
 
-ggplot(NPP_ridge, aes(x = draws, y = model)) +
-  geom_density_ridges() 
+ggplot(NPP_ridge, aes(x = draws, y = model, fill=model)) +
+  geom_density_ridges() +
+  ggtitle("NPP Effect Sizes")
+
+
+###########################
+## DHW SENSITIVITY MODEL ##
+###########################
+
+DHW_sens_formula <- bf(log(aesthe_survey) ~ dhw_mean +
+                         sst_mean +
+                         as.factor(Temperature_Zone) +
+                         (1 | Country/SiteCode),
+                       
+                       family=gaussian())
+
+DHW_sens_model <- brm(DHW_sens_formula,
+                      data=standardized_data,
+                      chains=4, iter=4000, cores=ncores,
+                      c(set_prior("normal(0,3)", class = "b"),
+                        set_prior("normal(0,3)", class="Intercept")))
+
+saveRDS(DHW_sens_model, "outputs/BIG_FILES/DHW_sens_model.rds")
+DHW_sens_model <- read_rds("outputs/BIG_FILES/DHW_sens_model.rds")
+
+DHW_sens_post <- as.data.frame(as.matrix(DHW_sens_model)) %>%
+  select('b_dhw_mean')
+
+performance::check_model(DHW_sens_model, check="vif")
+
+# RIDGE PLOT THE TWO POSTERIORS
+
+DHW_ridge <- data.frame(draws=c(DHW_post$b_dhw_mean, DHW_sens_post$b_dhw_mean),
+                        model=rep(c("original","sensitivity"),each=nrow(DHW_post)))
+
+ggplot(DHW_ridge, aes(x = draws, y = model, fill=model)) +
+  geom_density_ridges() +
+  ggtitle("DHW Effect Sizes")
+
+
+###########################
+## HDI SENSITIVITY MODEL ##
+###########################
+
+HDI_sens_formula <- bf(log(aesthe_survey) ~ HDI2017 +
+                         sst_mean +
+                         as.factor(Temperature_Zone) +
+                         (1 | Country/SiteCode),
+                       
+                       family=gaussian())
+
+HDI_sens_model <- brm(HDI_sens_formula,
+                      data=standardized_data,
+                      chains=4, iter=4000, cores=ncores,
+                      c(set_prior("normal(0,3)", class = "b"),
+                        set_prior("normal(0,3)", class="Intercept")))
+
+saveRDS(HDI_sens_model, "outputs/BIG_FILES/HDI_sens_model.rds")
+HDI_sens_model <- read_rds("outputs/BIG_FILES/HDI_sens_model.rds")
+
+HDI_sens_post <- as.data.frame(as.matrix(HDI_sens_model)) %>%
+  select('b_HDI2017')
+
+performance::check_model(HDI_sens_model, check="vif")
+
+# RIDGE PLOT THE TWO POSTERIORS
+
+HDI_ridge <- data.frame(draws=c(HDI_post$b_HDI2017, HDI_sens_post$b_HDI2017),
+                        model=rep(c("original","sensitivity"),each=nrow(HDI_post)))
+
+ggplot(HDI_ridge, aes(x = draws, y = model, fill=model)) +
+  geom_density_ridges() +
+  ggtitle("HDI Effect Sizes")
+
 
 
 ########################################################
@@ -789,8 +746,8 @@ MPA_richness_post <- as.data.frame(as.matrix(MPA_richness_model)) %>%
 
 benthic_PC1_richness_formula <- 
   bf(log(aesthe_survey) ~ PC1_imputed + nb_species +
-       Depth +
-       abs_latitude +
+       Depth + 
+       gravtot2 +
        MPA + 
        NPP_mean +
        sst_mean +
@@ -817,8 +774,8 @@ benthic_PC1_richness_post <- as.data.frame(as.matrix(benthic_PC1_richness_model)
 
 benthic_PC2_richness_formula <- 
   bf(log(aesthe_survey) ~ PC2_imputed + nb_species +
-       Depth +
-       abs_latitude +
+       Depth + 
+       gravtot2 +
        MPA + 
        NPP_mean +
        sst_mean +
@@ -948,67 +905,67 @@ ggpubr::ggarrange(
 
 # SST MODEL
 performance::check_model(sst_richness_model) # 
-graphics.off()
-plot(sst_richness_model)
-r2_bayes(sst_richness_model)
+# graphics.off()
+# plot(sst_richness_model)
+# r2_bayes(sst_richness_model)
 
 # NPP MODEL
 performance::check_model(NPP_richness__model) # 
-graphics.off()
-plot(NPP_richness_model)
-r2_bayes(NPP_richness_model)
+# graphics.off()
+# plot(NPP_richness_model)
+# r2_bayes(NPP_richness_model)
 
 # DEPTH MODEL
 performance::check_model(depth_richness_model) # 
-graphics.off()
-plot(depth_richness_model)
-r2_bayes(depth_richness_model)
+# graphics.off()
+# plot(depth_richness_model)
+# r2_bayes(depth_richness_model)
 
 # BIOMASS MODEL
 performance::check_model(Biom_richness_model) # 
-graphics.off()
-plot(Biom_richness_model)
-r2_bayes(Biom_richness_model)
+# graphics.off()
+# plot(Biom_richness_model)
+# r2_bayes(Biom_richness_model)
 
 # GRAVITY MODEL
 performance::check_model(gravity_richness_model) # 
-graphics.off()
-plot(gravity_richness_model)
-r2_bayes(gravity_richness_model)
+# graphics.off()
+# plot(gravity_richness_model)
+# r2_bayes(gravity_richness_model)
 
 # MPA MODEL
 performance::check_model(MPA_richness_model) # 
-graphics.off()
-plot(MPA_richness_model)
-r2_bayes(MPA_richness_model)
+# graphics.off()
+# plot(MPA_richness_model)
+# r2_bayes(MPA_richness_model)
 
 # BENTHIC MODEL 1
 performance::check_model(benthic_PC1_richness_model) # 
-graphics.off()
-plot(benthic_PC1_richness_model)
-r2_bayes(benthic_PC1_richness_model)
+# graphics.off()
+# plot(benthic_PC1_richness_model)
+# r2_bayes(benthic_PC1_richness_model)
 
 # BENTHIC MODEL 2
 performance::check_model(benthic_PC2_richness_model) # 
-graphics.off()
-plot(benthic_PC2_richness_model)
-r2_bayes(benthic_PC2_richness_model)
+# graphics.off()
+# plot(benthic_PC2_richness_model)
+# r2_bayes(benthic_PC2_richness_model)
 
 # DHW MODEL
 performance::check_model(DHW_richness_model) # 
-graphics.off()
-plot(DHW_richness_model)
-r2_bayes(DHW_richness_model)
+# graphics.off()
+# plot(DHW_richness_model)
+# r2_bayes(DHW_richness_model)
 
 # HDI MODEL
 performance::check_model(HDI_richness_model) # 
-graphics.off()
-plot(HDI_richness_model)
-r2_bayes(HDI_richness_model)
+# graphics.off()
+# plot(HDI_richness_model)
+# r2_bayes(HDI_richness_model)
 
 # FISHERIES DEPENDENCY MODEL
 performance::check_model(fshd_richness_model) # 
-graphics.off()
-plot(fshd_richness_model)
-r2_bayes(fshd_richness_model)
+# graphics.off()
+# plot(fshd_richness_model)
+# r2_bayes(fshd_richness_model)
 
