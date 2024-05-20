@@ -1,0 +1,13 @@
+8fc3a524607b01203c5ac7e437a9f400 *DESCRIPTION
+7cabcc13990cbffb8babfb29f9163133 *NAMESPACE
+c03efd13c1fbc00eb2014c2248bb78a6 *R/northseamacrozoobenthos.R
+19f3541ff769c26dbfbf36f9ca111693 *R/worms.R
+948ad15c5eaed7d98294b1f34ada0204 *R/worms_func.R
+20ea42495d14c75ee377e238c55ccb18 *data/northseamacrozoobenthos.rda
+bf8fa6e9c0f9854e5e1176581861cc9c *man/northseamacrozoobenthos.Rd
+ac2550e9e34f5dfe621e4581ea00db85 *man/worms.Rd
+962bd9227b08027215e7d86728f5bf42 *man/wormsaccepted.Rd
+e5cfd401d1111d36fd1bc4411d61bdd3 *man/wormsbyid.Rd
+cdcb73baa2b3de995995f7dd4831e050 *man/wormsbymatchnames.Rd
+8b7229673133c1a3f50de233ec2c4a69 *man/wormsbynames.Rd
+a75eecc0aa59bc76607ad8a37bfe305c *man/wormsconsolidate.Rd

@@ -1,4 +1,8 @@
 
+library(brms)
+library(bayesplot)
+library(readr)
+library(dplyr)
 
 MPA_models <- read_rds("outputs/MPA_mechanism_effects.rds")
 MPA_coefs <- as.data.frame(posterior_summary(MPA_models, 
@@ -32,7 +36,7 @@ MPA_coefs$size <- rep(2)
 
 MPA_coefs$color[MPA_coefs$variable=="MPA Total Causal Effect"] <- "black"
 
-MPA_coefs$size[MPA_coefs$variable=="MPA Total Causal Effect"] <- 3
+MPA_coefs$size[MPA_coefs$variable=="MPA Total Causal Effect"] <- 2.5
 
 
 ###########################
@@ -74,5 +78,5 @@ axis(2, at = seq(1:nrow(MPA_coefs)),
      labels = MPA_coefs$variable,
      las=2, cex.axis=1.25)
 
-abline(h=nrow(MPA_coefs)-0.5, lty=2, lwd=2)
+abline(h=nrow(MPA_coefs)-0.5, lty=1, lwd=1)
 

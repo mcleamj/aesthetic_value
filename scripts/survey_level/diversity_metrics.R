@@ -37,6 +37,11 @@ survey_sp_occ <- survey_sp_occ %>%
   column_to_rownames("SurveyID") 
 
 sp_traits <- read.csv("Data/All.RLS.traits.06222022.csv")
+
+# Select only traits of interest
+sp_traits <- sp_traits %>%
+  select(Species, Gregariousness, Water.Column, Diet, Habitat, TrophicLevel, BodySize)
+
 sp_traits <- sp_traits %>%
   mutate(Species = str_replace(Species, " ", "_")) %>%
   filter(Species %in% colnames(survey_sp_biom))
@@ -84,15 +89,15 @@ survey_biodiversity <- tibble::tibble(
 # Rearrange trait data
 sp_traits <- sp_traits %>%
   column_to_rownames("Species") %>%
-  mutate(across(c(Diet, Activity, Habitat), as.factor)) %>%
+  mutate(across(c(Diet, Habitat), as.factor)) %>%
   mutate(across(c(Gregariousness, Water.Column, TrophicLevel, BodySize), ordered))
 str(sp_traits)
   
 
 # Type of traits for mFD::funct.dist()
 traits_cat <- tibble::tibble(
-  trait_name = c("Gregariousness", "Water.Column", "Activity", "Diet","Habitat","TrophicLevel","BodySize"),
-  trait_type = c("O", "O", "N", "N", "N", "O", "O")
+  trait_name = c("Gregariousness", "Water.Column", "Diet","Habitat","TrophicLevel","BodySize"),
+  trait_type = c("O", "O", "N", "N", "O", "O")
   )
 
 # Gower distance

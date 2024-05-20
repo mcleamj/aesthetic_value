@@ -16,6 +16,7 @@
 
 if(!require(data.table)){install.packages("data.table"); library(data.table)}
 if(!require(mapproj)){install.packages("mapproj"); library(mapproj)}
+if(!require(ggridges)){install.packages("ggridges"); library(ggridges)}
 if(!require(ggplot2)){install.packages("ggplot2"); library(ggplot2)}
 if(!require(plot3D)){install.packages("plot3D"); library(plot3D)}
 if(!require(pals)){install.packages("pals"); library(pals)}
@@ -38,8 +39,6 @@ model_data <- readRDS("data/model_data.rds")
 names(model_data)
 
 model_data$MPA <- as.factor(model_data$MPA)
-
-model_data$sst_range <- model_data$sst_max - model_data$sst_min
 
 ######################################
 ## IMPORT AND ADD DIVERSITY METRICS ##
@@ -165,97 +164,10 @@ standardized_data <- model_data %>%
   mutate_if(colnames(model_data) %in% z_vars, z_score_2sd)
 
 
-##########################
-## INTERCEPT ONLY MODEL ##
-##########################
-
-int_only_formula <- bf(log(aesthe_survey) ~ 
-                         (1 | Country/SiteCode),
-                       
-                       family = gaussian())
-
-int_only_model <- brm(int_only_formula,
-                      data=standardized_data,
-                      chains=4, iter=4000, cores=ncores,
-                      refresh=500,
-                      set_prior("normal(0,3)", class="Intercept"))
-
-saveRDS(int_only_model, "outputs/BIG_FILES/int_only_model.rds")
-int_only_model <- read_rds("outputs/BIG_FILES/int_only_model.rds")
-
-int_output <- data.frame(as.matrix(int_only_model)) ## NEED TO BACK CALCULATE TO RAW VALUE
-
-site_estimates <- int_output %>%
-  select(starts_with("r_Country.SiteCode"))
-
-SiteCode = sapply(strsplit(names(site_estimates),split="[_]"), function(x) x[3])
-SiteCode <- gsub(".Intercept.","",SiteCode)
-SiteCode <- gsub("\\.","-",SiteCode)
-
-names(site_estimates) <- SiteCode
-
-site_estimates <- exp(site_estimates + int_output[,1]) ## BACK CALCULATE TO RAW VALUE
-
-site_estimates <- as.data.frame(posterior_summary(site_estimates))
-site_estimates$SiteCode <- rownames(site_estimates)
-
-site_info <- model_data %>%
-  select(SiteCode, SiteLongitude, SiteLatitude)
-site_info <- site_info[!duplicated(site_info$SiteCode),]
-
-site_estimates <- merge(site_info, site_estimates, by="SiteCode")
-write.table(site_estimates,"int_only_site_estimates.txt")
-
-raw_site_mean <- model_data %>%
-  select(SiteCode, SiteLongitude, SiteLatitude, aesthe_survey) %>%
-  group_by(SiteCode) %>%
-  summarise_all(mean)
-write.table(raw_site_mean, "raw_site_mean.txt")
-
-compare_site <- merge(site_estimates, raw_site_mean, by="SiteCode")
-plot(log(compare_site$aesthe_survey), log(compare_site$Estimate))
-
-########################
-## CAUSAL SALAD MODEL ##
-########################
-
-full_model_formula <- 
-  bf(log(aesthe_survey) ~
-       as.factor(Temperature_Zone) +
-       sst_mean +
-       NPP_mean +
-       Depth +
-       fshD +
-       dhw_mean +
-       PC1_imputed +
-       PC2_imputed +
-       HDI2017 +
-       gravtot2 +
-       MPA +
-       (1 | Country/SiteCode),
-     family = gaussian()) 
-
-full_model <- brm(full_model_formula,
-                  data=standardized_data,
-                  chains=4, iter=4000, cores=ncores,
-                  refresh=500,
-                  c(set_prior("normal(0,3)", class = "b"),
-                    set_prior("normal(0,3)", class="Intercept")))
-
-saveRDS(full_model, "outputs/BIG_FILES/full_model.rds")
-full_model <- read_rds("outputs/BIG_FILES/full_model.rds")
-
-r2_bayes(full_model)
-full_post <- as.data.frame(as.matrix(full_model)) %>%
-  select('b_sst_mean':'b_MPARestrictedtake')
-
-full_estimates <- data.frame(median=apply(full_post, 2, median))
-full_estimates$abs_effect <- abs(full_estimates$median)
-full_estimates <- full_estimates %>%
-  arrange(desc(abs_effect))
-
-full_post <- full_post[,order(match(colnames(full_post), rownames(full_estimates)))]
-mcmc_intervals(full_post)
+#'########################################################
+#' NOW RUN THE INDIVIDUAL MODELS FOR EACH PREDICTOR
+#' ACCORDING TO THE DAG (USING MINIMAL ADJUSTMENT SET)
+#'#######################################################
 
 ################
 ## SST  MODEL ##
@@ -420,8 +332,6 @@ MPA_model <- brm(MPA_model_formula,
 saveRDS(MPA_model, "outputs/BIG_FILES/MPA_model.rds")
 MPA_model <- read_rds("outputs/BIG_FILES/MPA_model.rds")
 
-#r2_bayes(MPA_model)
-
 MPA_post <- as.data.frame(as.matrix(MPA_model)) %>%
   select('b_MPANotake','b_MPARestrictedtake')
 
@@ -513,7 +423,6 @@ dag_output <- data.frame(sst_post, gravity_post, NPP_post, depth_post,
                          fshd_post, HDI_post, MPA_post,
                          benthic_PC1_post, benthic_PC2_post, DHW_post)
 
-names(full_post) <- gsub("b_", "", names(full_post))
 names(dag_output) <- gsub("b_", "", names(dag_output))
 
 dag_output <- dag_output %>%
@@ -529,91 +438,32 @@ dag_output <- dag_output %>%
          "Benthic Composition (PC1)" = PC1_imputed,
          "Benthic Composition (PC2)" = PC2_imputed)
 
-full_post <- full_post %>%
-  rename("Log Human Gravity" = gravtot2,
-    "No Take MPA" = MPANotake,
-    "Restricted Take MPA" = MPARestrictedtake,
-    "Sea Surface Temperature" = sst_mean,
-    "Net Primary Productivity" = NPP_mean,
-    "Degree Heating Weeks" = dhw_mean,
-    "Depth" =  Depth,
-    "Fisheries Dependency" = fshD,
-    "Human Dev. Index" = HDI2017,
-    "Benthic Composition (PC1)" = PC1_imputed,
-    "Benthic Composition (PC2)" = PC2_imputed)
-
 saveRDS(dag_output, "outputs/dag_output.rds")
-saveRDS(full_post, "outputs/full_post.rds")
 
 dag_output <- read_rds("outputs/dag_output.rds")
-full_post <- read_rds("outputs/full_post.rds")
 
 dag_estimates <- data.frame(median=apply(dag_output, 2, median))
 dag_estimates$abs_effect <- abs(dag_estimates$median)
 dag_estimates <- dag_estimates %>%
   arrange(desc(abs_effect))
 
-# MATCH DAG ORDER TO CAUSAL SALAD ORDER?
-#dag_output <- dag_output[,order(match(colnames(dag_output), colnames(full_post)))]
-
 ####################################
 ## RANK DAG ORDER BY EFFECT SIZE? ##
 ####################################
 
 dag_output <- dag_output[,order(match(colnames(dag_output), rownames(dag_estimates)))]
-full_post <- full_post[,order(match(colnames(full_post), colnames(dag_output)))]
 
 #########################
 ## SIMPLE FOREST PLOTS ##
 #########################
-
-color_scheme_set("darkgray")
-mcmc_areas_ridges(full_post) +
-  ggtitle("Causal Salad Model") +
-  xlim(range(full_post, dag_output))
 
 mcmc_areas_ridges(dag_output) +
   ggtitle("DAG-Based Models") +
-  xlim(range(full_post, dag_output))
-
-#########################
-## SIMPLE FOREST PLOTS ##
-#########################
-
-color_scheme_set("darkgray")
-mcmc_intervals(full_post) +
-  ggtitle("Causal Salad Model") +
-  xlim(range(full_post, dag_output))
+  xlim(range(dag_output))
 
 mcmc_intervals(dag_output) +
   ggtitle("DAG-Based Models") +
-  xlim(range(full_post, dag_output))
-
-ggpubr::ggarrange(mcmc_intervals(full_post) +
-                    ggtitle("Causal Salad Model") +
-                    xlim(range(full_post, dag_output)),
-                  
-                  mcmc_intervals(dag_output) +
-                    ggtitle("DAG-Based Models") +
-                    xlim(range(full_post, dag_output)),
-                  
-                  ncol = 2)
-
-#########################
-## SIMPLE FOREST PLOTS ##
-#########################
-
-ggpubr::ggarrange(
-  
-  mcmc_intervals(dag_output) +
-    ggtitle("DAG-Based Models") +
-    xlim(range(full_post, dag_output)),
-  
-  mcmc_intervals(full_post) +
-    ggtitle("Causal Salad Model") +
-    xlim(range(full_post, dag_output)),
-  
-  ncol = 2)
+  xlim(range(dag_output))
 
 #########################
 ## MODEL SUMMARY TABLE ##
@@ -627,14 +477,8 @@ posterior_summary(dag_output, probs=c(0.10,0.90))
 
 theme_set(theme_classic(base_size = 6))
 
-# CAUSAL SALAD MODEL
-performance::check_model(full_model) # GOOD
-graphics.off()
-plot(full_model)
-r2_bayes(full_model)
-
 # SST MODEL
-performance::check_model(sst_model, check = "vif") # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATITUDE AND SST
+performance::check_model(sst_model)#, check = "vif") # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATITUDE AND SST
 graphics.off()
 plot(sst_model, variable="b_sst_mean")
 r2_bayes(sst_model)
@@ -694,14 +538,12 @@ plot(fshd_model, variable="b_fshD")
 r2_bayes(fshd_model)
 
 
-
 ##############################################
 ## SENSITIVITY TESTS FOR SST AND NPP MODELS 
 ## THESE MODELS HAVE HIGH VIF
 ## DUE TO COLLINEARITY WITH LATITUDE
 ## CHECK MODEL RESULT WITH LATITUDE REMOVED
 ##############################################
-
 
 sst_sens_formula <- bf(log(aesthe_survey) ~ sst_mean +
                          as.factor(Temperature_Zone) +
@@ -715,6 +557,8 @@ sst_sense_model <- brm(sst_sens_formula,
                        c(set_prior("normal(0,3)", class = "b"),
                          set_prior("normal(0,3)", class="Intercept")))
 
+saveRDS(sst_sense_model, "outputs/BIG_FILES/sst_sense_model.rds")
+
 sst_sens_post <- as.data.frame(as.matrix(sst_sense_model)) %>%
   select('b_sst_mean')
 
@@ -727,7 +571,6 @@ sst_ridge <- data.frame(draws=c(sst_post$b_sst_mean, sst_sens_post$b_sst_mean),
 
 ggplot(sst_ridge, aes(x = draws, y = model)) +
   geom_density_ridges() 
-
 
 ###########################
 ## NPP SENSITIVITY MODEL ##
@@ -749,6 +592,8 @@ NPP_sens_model <- brm(NPP_sens_formula,
                       c(set_prior("normal(0,3)", class = "b"),
                         set_prior("normal(0,3)", class="Intercept")))
 
+saveRDS(NPP_sens_model, "outputs/BIG_FILES/NPP_sens_model.rds")
+
 NPP_sens_post <- as.data.frame(as.matrix(NPP_sens_model)) %>%
   select('b_NPP_mean')
 
@@ -761,7 +606,6 @@ NPP_ridge <- data.frame(draws=c(NPP_post$b_NPP_mean, NPP_sens_post$b_NPP_mean),
 
 ggplot(NPP_ridge, aes(x = draws, y = model)) +
   geom_density_ridges() 
-
 
 
 ########################################################
@@ -1054,7 +898,6 @@ dag_estimates_richness <- dag_estimates_richness %>%
 
 dag_output_richness <- dag_output_richness[,order(match(colnames(dag_output_richness), rownames(dag_estimates_richness)))]
 
-
 ## MATCH ORDER TO AESTH VALUE MODELS?
 dag_output_richness <- dag_output_richness[,order(match(colnames(dag_output_richness), rownames(dag_estimates)))]
 
@@ -1168,66 +1011,4 @@ performance::check_model(fshd_richness_model) #
 graphics.off()
 plot(fshd_richness_model)
 r2_bayes(fshd_richness_model)
-
-
-########################################################
-## TEST HOW WELL THE FULL MODEL PREDICTS UNKNOWN DATA ##
-########################################################
-
-# 91% CORRELATION WITH 4751 TRAINING OBSERVATONS AND 2255 TESTING OBSERVATIONS  
-
-# SPLIT THE DATA
-# HOW MANY COUNTRIES IN THE DATA
-length(unique(standardized_data$Country))
-#53 - select 20 at random
-rand_countries <- unique(standardized_data$Country)[sample(1:53,20,replace=FALSE)]
-training <- standardized_data %>%
-  filter(Country %in% rand_countries)
-testing <- standardized_data %>%
-  filter(!Country %in% rand_countries)
-
-########################
-## CAUSAL SALAD MODEL ##
-########################
-
-training_model_formula <- 
-  bf(log(aesthe_survey) ~
-       as.factor(Temperature_Zone) +
-       sst_mean +
-       NPP_mean +
-       Depth +
-       fshD +
-       dhw_mean +
-       PC1_imputed +
-       PC2_imputed +
-       HDI2017 +
-       gravtot2 +
-       MPA +
-       (1 | Country/SiteCode),
-     family = gaussian()) 
-
-training_model <- brm(training_model_formula,
-                      data=training,
-                      chains=4, iter=4000, cores=ncores,
-                      refresh=500,
-                      c(set_prior("normal(0,3)", class = "b"),
-                        set_prior("normal(0,3)", class="Intercept")))
-
-############################
-# PREDICT THE TESTING DATA #
-############################
-
-covariates <- names(training_model$data)
-testing <- testing %>%
-  filter(!is.na(Country))
-
-true_values <- log(testing$aesthe_survey)
-
-pred_values <- as.data.frame(predict(training_model, newdata = testing, allow_new_levels=TRUE))
-plot(true_values, pred_values$Estimate)
-cor.test(true_values, pred_values$Estimate)
-
-
-
-
 

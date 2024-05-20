@@ -29,17 +29,30 @@ if(!require(tibble)){install.packages("tibble"); library(tibble)}
 if(!require(stringr)){install.packages("stringr"); library(stringr)}
 if(!require(dplyr)){install.packages("dplyr"); library(dplyr)}
 
-##############################
-## IMPORT DATA "MODEL DATA"
-# RE-DO THIS ANALYSIS FOR ONLY ECOREGIONS WHERE THERE
-# ARE BOTH FISHED AND NO TAKE SITES
+#####################################
+## IMPORT DATA "STANDARDIZED DATA" ##
+#####################################
+
+standardized_data <- read_rds("outputs/standardized_data.rds")
+
+##################################
+## PARALLEL SETTINGS FOR MODELS ##
+##################################
+
+ncores = detectCores()
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+#########################
+## VARYING SLOPE MODEL ##
+#########################
 
 ecoregion_model_formula  <- bf(log(aesthe_survey) ~ MPA + # TEST VARIABLE
                            HDI2017 + # CONTROL VARIABLE
                            fshD + # CONTROL VARIABLE
                            gravtot2 + # CONTROL VARIABLE
                            as.factor(Temperature_Zone) + # CONTROL VARIABLE
-                           (1 | SiteCode) + # RANDOM INTERCEPTS FOR SITES
+                           (1 | Country/SiteCode) + # RANDOM INTERCEPTS FOR SITES
                            (1 + MPA | Ecoregion), # RANDOM INTERCEPT AND SLOPE FOR ECOREGION
                          
                          family=gaussian())

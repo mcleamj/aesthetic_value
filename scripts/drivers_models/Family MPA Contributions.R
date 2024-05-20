@@ -12,8 +12,10 @@
 ## LIBRARY PACKAGES ##
 ######################
 
+#install.packages("data/worms", repos = NULL, type="source")
+library(worms)
+
 if(!require(data.table)){install.packages("data.table"); library(data.table)}
-if(!require(rgdal)){install.packages("rgdal"); library(rgdal)}
 if(!require(mapproj)){install.packages("mapproj"); library(mapproj)}
 if(!require(plot3D)){install.packages("plot3D"); library(plot3D)}
 if(!require(pals)){install.packages("pals"); library(pals)}
@@ -102,10 +104,11 @@ site_sp_occ <- site_sp_occ %>%
 
 identical(colnames(site_sp_occ), rownames(family_trait))
 
-# family_proportions <- functcomp(as.matrix(family_trait),
-#                                as.matrix(site_sp_occ),
-#                                CWM.type = "all")
-# saveRDS(family_proportions, "outputs/family_proportions.rds")
+#family_proportions <- functcomp(as.matrix(family_trait),
+#                               as.matrix(site_sp_occ),
+#                               CWM.type = "all")
+#saveRDS(family_proportions, "outputs/family_proportions.rds")
+
 family_proportions <- read_rds("outputs/family_proportions.rds")
 
 colnames(family_proportions) <- gsub("family_", "", colnames(family_proportions))
@@ -113,6 +116,30 @@ colnames(family_proportions) <- gsub("family_", "", colnames(family_proportions)
 family_proportions <- family_proportions %>%
   rownames_to_column("SiteCode")
 
+#############################################
+## FAMILY COUNTS PER SITE (N SP IN FAMILY) ##
+#############################################
+
+family_count <- data.frame(SiteCode=rownames(site_sp_occ), site_sp_occ)
+
+family_count <- tidyr::gather(family_count,
+                              scientificname,
+                              presence,
+                              "Abalistes.stellatus":"Zoramia.viridiventer")
+
+family_count$scientificname <- gsub("\\."," ", family_count$scientificname)
+
+family_count <- merge(family_count, family_info[,c("scientificname","family")], by="scientificname")
+head(family_count)
+
+family_count <- family_count %>%
+  select(SiteCode, family, presence) %>%
+  group_by(SiteCode, family) %>%
+  summarise_all(.funs=sum)
+
+family_count <- tidyr::spread(family_count,
+                      family,
+                      presence)
 
 #'###########################################
 #' FILTER TO ONLY FISHED AND NO TAKE SITES 
@@ -133,16 +160,16 @@ selected_regions <- family_model_data %>%
 family_model_data <- family_model_data %>%
   filter(Ecoregion %in% selected_regions$Ecoregion)
 
-#########################################
-# WHICH ARE THE MOST DOMINANT FAMILIES?
-#########################################
+##########################################################
+# WHICH ARE THE MOST DOMINANT FAMILIES (BY PROPORTIION)?
+##########################################################
 
 family_abund <- family_proportions %>%
   select(-SiteCode) %>%
   colMeans() %>%
   as.data.frame() %>%
   rownames_to_column() %>%
-  dplyr::rename("mean" = ".", 
+  dplyr::rename("mean" = ".",
                 "family" = rowname) %>%
   arrange(desc(mean))
 family_abund$log_mean <- log(family_abund$mean)
@@ -172,7 +199,11 @@ family_abund <- merge(family_abund, site_per_family, by="family")
 
 dom_families <- family_abund %>%
   filter(mean >= quantile(family_abund$mean, probs = 0.75))
-  #filter(n_sites >=10)
+  ##filter(n_sites >=10)
+
+#######################################
+## PREPARE AND MERGE DATA FOR MODELS ##
+#######################################
 
 ## ADD OR SUBTRACT 0.001 TO BOUND FOR BETA MODELS
 
@@ -181,15 +212,15 @@ family_proportions[family_proportions==1] <- 0.999
 
 ## COMBINE THE FAMILY PROPORTIONS AND MODEL DATA
 ## AT THE SITE LEVEL FOR MPA MODELS
-## AT THE SURVEY LEVEL FOR BEAUTY MODELS
 
 MPA_model_data <- family_model_data %>%
   select(SiteCode, Country, Ecoregion, MPA)
-MPA_model_data <- MPA_model_data[!duplicated(MPA_model_data$SiteCode),]  
-MPA_model_data <- merge(MPA_model_data, family_proportions, by="SiteCode")
 
-beauty_model_data <- merge(family_model_data, 
-                           family_proportions, by="SiteCode")
+MPA_model_data <- MPA_model_data[!duplicated(MPA_model_data$SiteCode),]  
+
+proportion_model_data <- merge(MPA_model_data, family_proportions, by="SiteCode")
+
+count_model_data <- merge(MPA_model_data, family_count, by="SiteCode")
 
 
 ################################################
@@ -213,40 +244,77 @@ site_per_country <- family_model_data %>%
 ## WITH A RANDOM EFFECT FOR ECOREGION 
 ###########################################
 
-fit_list <- as.data.frame(matrix(ncol=nrow(family_abund), nrow=8000))
-colnames(fit_list) <- family_abund$family
+proportion_fit_list <- as.data.frame(matrix(ncol=nrow(family_abund), nrow=8000))
+colnames(proportion_fit_list) <- family_abund$family
 
 start_time <- Sys.time()
 
 for(i in 1:nrow(family_abund)){
   sub_model <- brm(formula=brmsformula(paste(family_abund$family[i], "~ MPA + (1 | Ecoregion)")),
                    family=Beta(link = "logit", link_phi = "log"),
-                   data=MPA_model_data,
+                   data=proportion_model_data,
                    chains=4,
                    cores=ncores, 
                    iter=4000)
                    #control = list(adapt_delta=0.95))
   sub_posterior <- as.data.frame(as.matrix(sub_model)) %>%
-    select(b_MPANotake)
+    select(b_Intercept, b_MPANotake)
   
-  fit_list[,i] <- sub_posterior$b_MPANotake
+  proportion_fit_list[,i] <- sub_posterior$b_MPANotake
   
 }
 
 end_time <- Sys.time()
 end_time - start_time
 
-mcmc_intervals(fit_list)
+mcmc_intervals(proportion_fit_list)
 
-saveRDS(fit_list,"outputs/fit_list.rds")
-fit_list <- read_rds("outputs/fit_list.rds")
+saveRDS(proportion_fit_list,"outputs/proportion_fit_list.rds")
+proportion_fit_list <- read_rds("outputs/proportion_fit_list.rds")
+
+
+
+###########################################
+## LOOP TO RUN ONE MODEL FOR EACH FAMILY 
+## FAMILY COUNT IN FUNCTION OF MPA 
+## WITH A RANDOM EFFECT FOR ECOREGION 
+###########################################
+
+count_fit_list <- as.data.frame(matrix(ncol=nrow(family_abund), nrow=8000))
+colnames(count_fit_list) <- family_abund$family
+
+start_time <- Sys.time()
+
+for(i in 1:nrow(family_abund)){
+  sub_model <- brm(formula=brmsformula(paste(family_abund$family[i], "~ MPA + (1 | Ecoregion)")),
+                   family=negbinomial(link="log", link_shape = "log"),
+                   data=count_model_data,
+                   chains=4,
+                   cores=ncores, 
+                   iter=4000)
+  #control = list(adapt_delta=0.95))
+  sub_posterior <- as.data.frame(as.matrix(sub_model)) %>%
+    select(b_Intercept, b_MPANotake)
+  
+  count_fit_list[,i] <- sub_posterior$b_MPANotake
+  
+}
+
+end_time <- Sys.time()
+end_time - start_time
+
+mcmc_intervals(count_fit_list)
+
+saveRDS(count_fit_list,"outputs/count_fit_list.rds")
+count_fit_list <- read_rds("outputs/count_fit_list.rds")
+
 
 ##############################################
 ## WHICH FAMILIES HAVE HIGHEST MPA EFFECTS? ##
 ##############################################
 
-family_MPA <- data.frame(family=colnames(fit_list),
-                            MPA_effect_mean = colMeans(fit_list)) %>%
+family_MPA <- data.frame(family=colnames(proportion_fit_list),
+                            MPA_effect_mean = colMeans(proportion_fit_list)) %>%
   arrange(desc(MPA_effect_mean))
 
 
@@ -266,6 +334,17 @@ family_beauty <- aesthe_species %>%
   select(-scientificname) %>%
   group_by(family) %>%
   summarise_all(.funs=mean)
+
+
+
+
+
+
+
+
+
+
+
 
 #########################################################
 ## FOREST PLOT OF MPA EFFECT COLORED BY AVERAGE BEAUTY ##

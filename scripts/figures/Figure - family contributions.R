@@ -12,7 +12,6 @@
 ######################
 
 if(!require(data.table)){install.packages("data.table"); library(data.table)}
-if(!require(rgdal)){install.packages("rgdal"); library(rgdal)}
 if(!require(mapproj)){install.packages("mapproj"); library(mapproj)}
 if(!require(plot3D)){install.packages("plot3D"); library(plot3D)}
 if(!require(pals)){install.packages("pals"); library(pals)}
@@ -58,9 +57,6 @@ family_beauty <- aesthe_species %>%
   group_by(family) %>%
   summarise_all(.funs=mean)
 
-#########################################################
-## FOREST PLOT OF MPA EFFECT COLORED BY AVERAGE BEAUTY ##
-#########################################################
 
 MPA_effect_summary <- as.data.frame(brms::posterior_summary(fit_list,
                                                             probs=c(0.10,0.25,0.75,0.90)))
@@ -76,7 +72,18 @@ MPA_effect_summary$log_beauty <- log(MPA_effect_summary$aesthe_score)
 top_MPA_families <- MPA_effect_summary %>%
   filter(Estimate >= quantile(MPA_effect_summary$Estimate, prob=0.75))
 
-plot_colors <- variablecol(colvar = top_MPA_families$aesthe_score, col = jet(n=nrow(top_MPA_families)), clim=range(family_beauty$aesthe_score))
+bottom_MPA_families <- MPA_effect_summary %>%
+  filter(Estimate <= quantile(MPA_effect_summary$Estimate, prob=0.25))
+
+
+
+#########################################################
+## FOREST PLOT OF MPA EFFECT COLORED BY AVERAGE BEAUTY ##
+#########################################################
+
+plot_colors <- variablecol(colvar = top_MPA_families$aesthe_score, 
+                           col = jet(n=nrow(top_MPA_families)), 
+                           clim=range(family_beauty$aesthe_score))
 
 graphics.off()
 par(mar=c(4,12,4,4))
@@ -108,3 +115,69 @@ axis(2, at = seq(1:nrow(top_MPA_families)),
      las=2, cex.axis=1)
 
 title("Family Contributions to MPA Effect")
+
+
+
+###################
+## DENSITY PLOTS ##
+###################
+
+range(MPA_effect_summary$aesthe_score)
+aes_range <- c(1000,2000)
+
+hist(MPA_effect_summary$aesthe_score,
+     xlim=aes_range)
+
+hist(top_MPA_families$aesthe_score,
+     xlim=aes_range)
+
+
+plot(density(MPA_effect_summary$aesthe_score),lty=0,
+     xlab="Average Aesthetic Value", ylab="Density", main=NA)
+
+polygon(density(MPA_effect_summary$aesthe_score),
+        border = NA, col =  adjustcolor("grey",alpha.f = 0.75))
+
+polygon(density(top_MPA_families$aesthe_score),
+        border = NA, col =  adjustcolor("purple",alpha.f = 0.75))
+
+legend("topright",legend=c("All Families", "MPA-Dominant Families"),
+       pch=19,col = c("grey","purple"))
+
+title("Average Family Aesthetic Values")
+
+range(MPA_effect_summary$log_beauty)
+log_aes_range <- c(7,7.6)
+
+hist(MPA_effect_summary$log_beauty,
+     xlim=log_aes_range)
+
+hist(top_MPA_families$log_beauty,
+     xlim=log_aes_range)
+
+
+#########################
+## SIMPLE SCATTERPLOTS ##
+#########################
+
+MPA_effect_summary$top_family <- ifelse(MPA_effect_summary$Estimate>=
+                                          quantile(MPA_effect_summary$Estimate,probs = 0.75),
+                                        "yes","no")
+
+plot(MPA_effect_summary$aesthe_score, MPA_effect_summary$Estimate,
+     ylab="MPA Effect Size",
+     xlab="Average Aesthetic Value",
+     main="Family-Level MPA Effects vs. Average Aesthetic Value",
+     cex.main=1,
+     pch=21,bg=ifelse(MPA_effect_summary$top_family=="yes","purple","grey"))
+abline(h=quantile(MPA_effect_summary$Estimate,probs = 0.75))
+
+
+##########################################
+## ARE "UGLY" FAMILIES BEING INFLATED
+## BY THOSE FROM REGIONS WITH NO MPAS?
+## FILTER TO ONLY FAMILIES FOUND IN BOTH 
+## MPA AND FISHED SITES?
+##########################################
+
+

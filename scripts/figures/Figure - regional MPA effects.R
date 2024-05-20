@@ -12,7 +12,7 @@
 ## LIBRARY PACKAGES ##
 ######################
 
-if(!require(rgdal)){install.packages("rgdal"); library(rgdal)}
+if(!require(sf)){install.packages("sf"); library(sf)}
 if(!require(mapproj)){install.packages("mapproj"); library(mapproj)}
 if(!require(plot3D)){install.packages("plot3D"); library(plot3D)}
 if(!require(ggplot2)){install.packages("ggplot2"); library(ggplot2)}

@@ -3,7 +3,7 @@
 #'  SCRIPT TO RUN DAG DATA CONSISTENCY CHECKS FOR THE DIRECTED ACYLIC GRAPH (DAG)
 #'  THE DAG CAN BE FOUND AT:
 #'  
-#'  dagitty.net/mxttk25
+#'  dagitty.net/m6WdXviAT
 #'
 #' @author Matthew McLean, \email {mcleamj@gmail.com},
 #'         

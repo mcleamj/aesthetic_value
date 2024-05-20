@@ -1,8 +1,4 @@
 
-# WHAT ABOUT FOREST PLOT+ PATHWAYS
-# THE ONLY ISSUE BEING 2 PC AXES
-# VS 1 PATHWAY
-
 
 library(DescTools)
 library(brms)

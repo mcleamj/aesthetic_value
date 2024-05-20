@@ -80,11 +80,11 @@ str(species_traits)
 
 cwm_traits_cont <- functcomp(as.matrix(select(species_traits, c(BodySize, Trophic.Level))), as.matrix(survey_sp_occ))
 cwm_traits_cat <-  functcomp(as.matrix(select(species_traits, Diet)), as.matrix(survey_sp_occ),CWM.type = "all")
+
 # NEED TO TRANSFORM THE CATEGORICAL TRAITS
 cwm_traits_cat <- asin(sqrt(cwm_traits_cat))
 
 cwm_traits <- data.frame(cwm_traits_cont, cwm_traits_cat)                       
-
 
 # PCA FOR TROPHIC GUILD COMPOSITION
 
@@ -95,7 +95,9 @@ fviz_pca_var(trophic_PCA, col.var = "contrib",
              repel = FALSE)
 
 # DO I NEED TO ROTATE PC AXES FOR POSITIVE
-# RELATIONSHIP WITH AESTHETIC?
+# RELATIONSHIP WITH AESTHETIC VALUE?
+# THIS WILL MAKE OTHER ANALYSES AND RESULTS MORE INTUITIVE
+# AND HAS NO EFFECT ON DATA SINCE ORDINATION AXES DIRECTIONS ARE ARBITRARY
 # YES FLIP PC1 AND PC2
 
 trophic_PCA$x[,1] <- trophic_PCA$x[,1]*-1
