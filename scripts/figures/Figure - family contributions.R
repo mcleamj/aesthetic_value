@@ -58,6 +58,8 @@ family_beauty <- aesthe_species %>%
   summarise_all(.funs=mean)
 
 
+# SUMMARIZE MODEL OUPTUTS #
+
 MPA_effect_summary <- as.data.frame(brms::posterior_summary(fit_list,
                                                             probs=c(0.10,0.25,0.75,0.90)))
 
@@ -118,67 +120,5 @@ title("Family Contributions to MPA Effect",
       line=1, font.main=1, cex.main=1.5)
 
 
-
-###################
-## DENSITY PLOTS ##
-###################
-
-range(MPA_effect_summary$aesthe_score)
-aes_range <- c(1000,2000)
-
-hist(MPA_effect_summary$aesthe_score,
-     xlim=aes_range)
-
-hist(top_MPA_families$aesthe_score,
-     xlim=aes_range)
-
-
-plot(density(MPA_effect_summary$aesthe_score),lty=0,
-     xlab="Average Aesthetic Value", ylab="Density", main=NA)
-
-polygon(density(MPA_effect_summary$aesthe_score),
-        border = NA, col =  adjustcolor("grey",alpha.f = 0.75))
-
-polygon(density(top_MPA_families$aesthe_score),
-        border = NA, col =  adjustcolor("purple",alpha.f = 0.75))
-
-legend("topright",legend=c("All Families", "MPA-Dominant Families"),
-       pch=19,col = c("grey","purple"))
-
-title("Average Family Aesthetic Values")
-
-range(MPA_effect_summary$log_beauty)
-log_aes_range <- c(7,7.6)
-
-hist(MPA_effect_summary$log_beauty,
-     xlim=log_aes_range)
-
-hist(top_MPA_families$log_beauty,
-     xlim=log_aes_range)
-
-
-#########################
-## SIMPLE SCATTERPLOTS ##
-#########################
-
-MPA_effect_summary$top_family <- ifelse(MPA_effect_summary$Estimate>=
-                                          quantile(MPA_effect_summary$Estimate,probs = 0.75),
-                                        "yes","no")
-
-plot(MPA_effect_summary$aesthe_score, MPA_effect_summary$Estimate,
-     ylab="MPA Effect Size",
-     xlab="Average Aesthetic Value",
-     main="Family-Level MPA Effects vs. Average Aesthetic Value",
-     cex.main=1,
-     pch=21,bg=ifelse(MPA_effect_summary$top_family=="yes","purple","grey"))
-abline(h=quantile(MPA_effect_summary$Estimate,probs = 0.75))
-
-
-##########################################
-## ARE "UGLY" FAMILIES BEING INFLATED
-## BY THOSE FROM REGIONS WITH NO MPAS?
-## FILTER TO ONLY FAMILIES FOUND IN BOTH 
-## MPA AND FISHED SITES?
-##########################################
 
 

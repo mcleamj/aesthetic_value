@@ -6,7 +6,7 @@
 #' @author Matthew McLean, \email {mcleamj@gmail.com},
 #'         Eva Maire
 #'         
-#' @date updated June 2nd 2023
+#' @date updated May 2024
 #' 
 ########################################################################################
 
@@ -446,8 +446,8 @@ write.table(imputed_benthic_data, "RLS_benthic_data_imputed.txt")
 write.table(RLS_PC_imputed, "RLS_benthic_PCA_imputed.txt")
 
 ##################################################################################################
-## AFTER PERFORMING THE ABOVE ANALYSIS, DAVID PROVIDED 74 ADDITIONAL TRANSECTS WITH MISSING DATA
-## RE DO THE IMPUTATION WITH DAVID'S EXTRA MISSING DATA ADDED (74 TRANSECTS)  
+## AFTER PERFORMING THE ABOVE ANALYSIS, D. MOUILLOT PROVIDED 74 ADDITIONAL TRANSECTS WITH MISSING DATA
+## RE DO THE IMPUTATION WITH EXTRA MISSING DATA ADDED (74 TRANSECTS)  
 ##################################################################################################
 
 # ADD THE MISSING TRANSECTS FROM DAVID #

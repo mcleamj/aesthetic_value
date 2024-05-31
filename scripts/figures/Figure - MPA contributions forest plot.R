@@ -4,6 +4,8 @@ library(bayesplot)
 library(readr)
 library(dplyr)
 
+# LOAD MPA MECHANSIM EFFECT SIZE DATA 
+
 MPA_models <- read_rds("outputs/MPA_mechanism_effects.rds")
 MPA_coefs <- as.data.frame(posterior_summary(MPA_models, 
                                              probs=c(0.05,0.25,0.75,0.95)))
@@ -88,10 +90,6 @@ axis(2, at = seq(1:nrow(MPA_coefs)),
 
 abline(h=nrow(MPA_coefs)-0.5, lty=1, lwd=1)
 
-
-################################
-## WHAT ABOUT MARGINAL PLOTS? ##
-################################
 
 
 

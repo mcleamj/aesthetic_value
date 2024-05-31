@@ -7,7 +7,7 @@
 #'
 #' @author Matthew McLean, \email {mcleamj@gmail.com},
 #'         
-#' @date JULY 07, 2023
+#' @date May, 2024
 ########################################################################################
 
 ######################
@@ -23,7 +23,6 @@ if(!require(readr)){install.packages("readr"); library(readr)}
 # DOWNLOAD THE DAG #
 ####################
 
-#DAG <- downloadGraph("dagitty.net/mxttk25") # ORIGINAL, OUTDATED DAG
 DAG <- downloadGraph("dagitty.net/m6WdXviAT") # UPDATED FEB 2024
 
 names(DAG)

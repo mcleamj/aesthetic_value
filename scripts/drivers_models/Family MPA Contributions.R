@@ -5,7 +5,7 @@
 #'
 #' @author Matthew McLean, \email {mcleamj@gmail.com},
 #'         
-#' @date JUNE 9, 2023
+#' @date Updated May, 2023
 ########################################################################################
 
 ######################
@@ -55,66 +55,14 @@ ncores = detectCores()
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
-##'##################################
-##' IMPORT OCCURENCE INFORMATION 
-##' AGGREGATE OCCURENCES TO SITE LEVEL
-##' AND CALCULATE FAMILY PROPORTIONS 
-##' FOR EACH SITE
-##' #################################
-
-survey_sp_occ <- readr::read_rds("outputs/sp_pres_matrix.rds")
-
-survey_species <- survey_sp_occ %>%
-  dplyr::select(where(is.numeric)) %>%
-  colnames() %>%
-  as.data.frame() %>%
-  dplyr::rename("species"= ".")
-
-survey_species$species <- gsub("_", " ", survey_species$species) 
-survey_species <- survey_species %>%
-  rename("species_name" = "species")
-
-survey_species$scientificname <- gsub(" spp.", "", survey_species$species_name)
-
-#family_info <- worms::wormsbynames(survey_species$scientificname) 
-#family_info <- merge(family_info, survey_species, by="scientificname")
-#saveRDS(family_info, "outputs/family_info.rds")
-family_info <- read_rds("outputs/family_info.rds")
-
-## CALCULATE FAMILY PROPORTIONS AT EACH SITE
-
-site_sp_occ <- merge(model_data[,c("SiteCode","SurveyID")], survey_sp_occ,
-                     by="SurveyID")
-site_sp_occ <- site_sp_occ %>%
-  select(-SurveyID) %>%
-  group_by(SiteCode) %>%
-  summarise_all(.funs = mean, na.rm=T) %>%
-  mutate_if(is.numeric, ~1 * (. > 0))
-
-family_trait <- family_info %>%
-  select(species_name, family) %>%
-  arrange(species_name) %>%
-  column_to_rownames("species_name")
-
-site_sp_occ <- site_sp_occ %>%
-  column_to_rownames("SiteCode")
-colnames(site_sp_occ) <- gsub("_", " ", colnames(site_sp_occ) )
-site_sp_occ <- site_sp_occ %>%
- select(order(colnames(site_sp_occ)))
-
-identical(colnames(site_sp_occ), rownames(family_trait))
-
-#family_proportions <- functcomp(as.matrix(family_trait),
-#                               as.matrix(site_sp_occ),
-#                               CWM.type = "all")
-#saveRDS(family_proportions, "outputs/family_proportions.rds")
+#################################
+# IMPORT FAMILY PROPORTION DATA #
+#################################
 
 family_proportions <- read_rds("outputs/family_proportions.rds")
 
-colnames(family_proportions) <- gsub("family_", "", colnames(family_proportions))
-
-family_proportions <- family_proportions %>%
-  rownames_to_column("SiteCode")
+#family_proportions <- family_proportions %>%
+#  rownames_to_column("SiteCode")
 
 #############################################
 ## FAMILY COUNTS PER SITE (N SP IN FAMILY) ##
@@ -192,7 +140,7 @@ site_per_family <-  family_proportions %>%
   mutate_if(is.numeric, ~1 * (. > 0)) %>%
   colSums() %>%
   as.data.frame() %>%
-  rename(n_sites = ".")
+  dplyr::rename(n_sites = ".")
 site_per_family$family <- rownames(site_per_family)
 
 family_abund <- merge(family_abund, site_per_family, by="family")
@@ -230,12 +178,12 @@ count_model_data <- merge(MPA_model_data, family_count, by="SiteCode")
 site_per_eco <- family_model_data %>%
   select(SiteCode, Ecoregion) %>%
   group_by(Ecoregion) %>%
-  summarise(n())
+  dplyr::summarise(n())
 
 site_per_country <- family_model_data %>%
   select(SiteCode, Country) %>%
   group_by(Country) %>%
-  summarise(n())
+  dplyr::summarise(n())
 
 
 ###########################################
@@ -307,91 +255,4 @@ mcmc_intervals(count_fit_list)
 
 saveRDS(count_fit_list,"outputs/count_fit_list.rds")
 count_fit_list <- read_rds("outputs/count_fit_list.rds")
-
-
-##############################################
-## WHICH FAMILIES HAVE HIGHEST MPA EFFECTS? ##
-##############################################
-
-family_MPA <- data.frame(family=colnames(proportion_fit_list),
-                            MPA_effect_mean = colMeans(proportion_fit_list)) %>%
-  arrange(desc(MPA_effect_mean))
-
-
-##################################################
-## CALCULATE AVERAGE AESTHETIC VALUE PER FAMILY ##
-##################################################
-
-aesthe_species <- read.csv2(here::here("data", "aesthe_langlois_2022.csv"))
-aesthe_species$sp_name <- as.character(gsub("_"," ",aesthe_species$sp_name))
-aesthe_species$aesthe_score <- as.numeric(aesthe_species$aesthe_score)
-
-aesthe_species <- aesthe_species %>% rename(scientificname = sp_name)
-
-aesthe_species <- merge(aesthe_species, family_info[,c("scientificname", "family")],
-                        by="scientificname")
-family_beauty <- aesthe_species %>%
-  select(-scientificname) %>%
-  group_by(family) %>%
-  summarise_all(.funs=mean)
-
-
-
-
-
-
-
-
-
-
-
-
-#########################################################
-## FOREST PLOT OF MPA EFFECT COLORED BY AVERAGE BEAUTY ##
-#########################################################
-
-MPA_effect_summary <- as.data.frame(brms::posterior_summary(fit_list,
-                                              probs=c(0.10,0.25,0.75,0.90)))
-
-MPA_effect_summary$family <- rownames(MPA_effect_summary)
-
-MPA_effect_summary <- merge(MPA_effect_summary, family_beauty, by="family")
-MPA_effect_summary <- MPA_effect_summary %>%
-  arrange((Estimate))
-MPA_effect_summary$log_beauty <- log(MPA_effect_summary$aesthe_score)
-
-# TAKE ONLY THE FAMILIES WITH HIGH MPA EFFECT (TOP X%)
-top_MPA_families <- MPA_effect_summary %>%
-  filter(Estimate >= quantile(MPA_effect_summary$Estimate, prob=0.75))
-
-plot_colors <- variablecol(colvar = top_MPA_families$aesthe_score, col = jet(n=nrow(top_MPA_families)), clim=range(family_beauty$aesthe_score))
-
-graphics.off()
-par(mar=c(4,12,4,4))
-scatter2D(top_MPA_families$Estimate, seq(1:nrow(top_MPA_families)), xlim=c(min(top_MPA_families$Q10,na.rm = TRUE),max(top_MPA_families$Q90,na.rm = TRUE)),
-          ylim=c(min(seq(1:nrow(top_MPA_families))-0.25),max(seq(1:nrow(top_MPA_families))+0.25)),cex=0,
-          xlab="MPA Effect Size", ylab=NA, yaxt = "n",
-          cex.lab=1.25, colvar = top_MPA_families$aesthe_score, col=jet(n=nrow(top_MPA_families)))
-mtext(side=4, "Average Aesthetic Value", line=2, cex=1.1)
-title("", line=1,
-      font.main=1, cex.main=1.5)
-
-par(lend=1)
-x0 <- top_MPA_families$Q10
-x1 <- top_MPA_families$Q90
-y0 <- seq(1:nrow(top_MPA_families))
-y1 <- seq(1:nrow(top_MPA_families))
-segments(x0,y0,x1,y1, lwd=2, col=plot_colors)
-x0 <- top_MPA_families$Q25
-x1 <- top_MPA_families$Q75
-y0 <- seq(1:nrow(top_MPA_families))
-y1 <- seq(1:nrow(top_MPA_families))
-segments(x0,y0,x1,y1, lwd=5, col=plot_colors)
-
-points(top_MPA_families$Estimate, seq(1:nrow(top_MPA_families)),pch=21,col=1,bg=plot_colors, cex=1.5)
-abline(v=0, lwd=1.5, col=adjustcolor("black",alpha.f = 0.75), lty=2)
-
-axis(2, at = seq(1:nrow(top_MPA_families)), 
-     labels = top_MPA_families$family,
-     las=2, cex.axis=1)
 

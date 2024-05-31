@@ -9,7 +9,7 @@
 #'
 #' @author Matthew McLean, \email {mcleamj@gmail.com},
 #'         
-#' @date JULY 6, 2023
+#' @date Updated May 2024
 ########################################################################################
 
 ######################
@@ -27,13 +27,15 @@ if(!require(readr)){install.packages("readr"); library(readr)}
 if(!require(tibble)){install.packages("tibble"); library(tibble)}
 if(!require(dplyr)){install.packages("dplyr"); library(dplyr)}
 
+###################################
+## UPLOAD FAMILY PROPORTION DATA ##
+###################################
 
 family_proportions <- read_rds("outputs/family_proportions.rds")
 
-colnames(family_proportions) <- gsub("family_", "", colnames(family_proportions))
-
-family_proportions <- family_proportions %>%
-  rownames_to_column("SiteCode")
+#################################################
+# UPLOAD MODEL DATA AND MERGE WITH FAMILY DATA ##
+#################################################
 
 model_data <- readRDS("data/model_data.rds")
 
@@ -66,10 +68,15 @@ fviz_pca_var(family_PCA, col.var = "contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
              repel = FALSE)
 
-# ROTATE AXIS 1 AND 2 SO THAT THEY IS POSITIVELY
-# ASSOCIATED WITH AESTHETIC VALUE
-# TO BE MORE INTUITIVE
-# RE PLOT THE PCA
+# ROTATE THE ORDINATION AXES BASED ON EXPLORATORY ANALYSIS
+# THIS WILL PROVIDE A POSITIVE RELATIONSHIP BETWEEN 
+# PC AXES AND AESTHETIC VALUE
+# WHICH WILL MAKE THE RESULTS MORE INTUITIVE AND CLEAR
+# BUT WILL HAVE NO EFFECT ON THE OVERALL RESULT 
+# OR THE ORDINATION ITSELF
+
+# FLIP PC1 AND PC2
+
 family_PCA$x[,1] <- family_PCA$x[,1]*-1
 family_PCA$rotation[,1] <- family_PCA$rotation[,1] * -1
 
@@ -88,25 +95,6 @@ taxo_structure <- data.frame(SiteCode = family_PCA_data$SiteCode,
 
 saveRDS(taxo_structure, "outputs/taxo_structure.rds")
 
-# SOME EXPLORATORY PLOTS
-plot(family_PCA$x[,1], family_PCA$x[,2], 
-     col=as.integer(as.factor(family_PCA_data$MPA)))
-boxplot(family_PCA$x[,1] ~ family_PCA_data$MPA)
-boxplot(family_PCA$x[,2] ~ family_PCA_data$MPA)
-
-graphics.off()
-plot(family_PCA$x[,1] ~ family_PCA_data$SiteLatitude)
-
-##################################
-## FAMILY LEVEL LATITUDE TRENDS ##
-##################################
-
-par(mfrow=c(2,2))
-for(i in unique(dom_families$family)) {
-  plot(family_arc_sine[,i] ~ family_PCA_data$SiteLatitude,
-       xlab="Latitude", ylab="Proportion of Species (transformed)")
-  title(i)
-}
 
 ###############################################
 ## BRAY CURTIS AND PCOA ON THE ARC SINE DATA ##
