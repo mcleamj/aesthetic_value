@@ -1,4 +1,10 @@
 # RLS_Aesthetic_value
+
+<!-- badges: start -->
+[![License: GPL (>= 2)](https://img.shields.io/badge/License-GPL%20%28%3E%3D%202%29-blue.svg)](https://choosealicense.com/licenses/gpl-2.0/)
+<!-- badges: end -->
+
+
 Research compendium to reproduce analyses and figures of the following article: "XXX" McLean et al. & Mouquet Submitted to XX.
 
 ms : https://docs.google.com/document/d/1gE_Z4GQoFHjzEu0WmANyfg5s1eBWuYOTKFAO3kYfxmY/edit#

@@ -23,7 +23,7 @@ Description: Code and data associated to the paper McLean et al. (2024)
     Nature Sustainability.
 URL: https://github.com/mcleamj/aesthetic_value
 BugReports: https://github.com/mcleamj/aesthetic_value/issues
-License: {{license}}
+License: GPL (>= 2)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
