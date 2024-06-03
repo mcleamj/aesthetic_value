@@ -1,0 +1,81 @@
+Package: aesthetic_value
+Type: Package
+Title: Research Compendium
+Version: 1.0
+Authors@R: c(
+    person(given   = "Matthew",
+           family  = "McLean",
+           role    = c("aut", "cre", "cph"),
+           email   = "mcleamj@gmail.com",
+           comment = c(ORCID = "0000-0001-6518-6043")),
+    person(given   = "Nicolas",
+           family  = "Mouquet",
+           role    = "aut",
+           email   = "nicolas.mouquet@cnrs.fr",
+           comment = c(ORCID = "0000-0003-1840-6984")),
+    person(given   = "Nicolas",
+           family  = "Casajus",
+           role    = "aut",
+           email   = "rdev.nc@gmail.com",
+           comment = c(ORCID = "0000-0002-5537-5294")))
+Description: Code and data associated to the paper McLean et al. (2024) 
+    Conserving the beauty of the world's reef fish communities. Submitted to
+    Nature Sustainability.
+URL: https://github.com/mcleamj/aesthetic_value
+BugReports: https://github.com/mcleamj/aesthetic_value/issues
+License: {{license}}
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Imports: 
+    ggdist,
+    ggpubr,
+    here,
+    pbmcapply
+Depends: 
+    ape,
+    base64enc,
+    bayesplot,
+    bayestestR,
+    betapart,
+    brms,
+    corrgram,
+    corrplot,
+    dagitty,
+    data.table,
+    DataCombine,
+    dplyr,
+    factoextra,
+    FactoMineR,
+    FD,
+    FishPhyloMaker,
+    fishtree,
+    funrar,
+    geiger,
+    geosphere,
+    ggplot2,
+    ggridges,
+    gridExtra,
+    hillR,
+    indicspecies,
+    mapproj,
+    mFD,
+    missForest,
+    pals,
+    parallel,
+    patchwork,
+    performance,
+    plot3D,
+    raster,
+    RColorBrewer,
+    readr,
+    rstan,
+    sf,
+    stringr,
+    tibble,
+    tidyr,
+    tidyverse,
+    vegan,
+    viridis,
+    worms,
+    worrms
