@@ -14,31 +14,28 @@
 ## LIBRARY PACKAGES ##
 ######################
 
-if(!require(data.table)){install.packages("data.table"); library(data.table)}
-if(!require(DataCombine)){install.packages("DataCombine"); library(DataCombine)}
-if(!require(mapproj)){install.packages("mapproj"); library(mapproj)}
-if(!require(plot3D)){install.packages("plot3D"); library(plot3D)}
-if(!require(pals)){install.packages("pals"); library(pals)}
-if(!require(ggplot2)){install.packages("ggplot2"); library(ggplot2)}
-if(!require(viridis)){install.packages("viridis"); library(viridis)}
 if(!require(brms)){install.packages("brms"); library(brms)}
 if(!require(bayesplot)){install.packages("bayesplot"); library(bayesplot)}
 if(!require(parallel)){install.packages("parallel"); library(parallel)}
 if(!require(rstan)){install.packages("rstan"); library(rstan)}
-if(!require(bayestestR)){install.packages("bayestestR"); library(bayestestR)}
-if(!require(indicspecies)){install.packages("indicspecies"); library(indicspecies)}
-if(!require(vegan)){install.packages("vegan"); library(vegan)}
 if(!require(readr)){install.packages("readr"); library(readr)}
 if(!require(tibble)){install.packages("tibble"); library(tibble)}
 if(!require(dplyr)){install.packages("dplyr"); library(dplyr)}
-
-library(worrms)
 
 ################################
 ## IMPORT PREPARED MODEL DATA ##
 ################################
 
 standardized_data <-  read_rds("outputs/standardized_data.rds")
+
+#############################
+## ADD TROPHIC COMPOSITION ##
+#############################
+
+trophic <- read_rds("outputs/trophic_composition.rds")
+
+standardized_data <- merge(standardized_data, trophic, 
+                           by="SurveyID")
 
 ##################################
 ## PARALLEL SETTINGS FOR MODELS ##
