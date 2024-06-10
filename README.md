@@ -3,6 +3,7 @@ Conserving the beauty of the world's reef fish communities <img src="https://raw
 
 <!-- badges: start -->
 [![License: GPL (>= 2)](https://img.shields.io/badge/License-GPL%20%28%3E%3D%202%29-blue.svg)](https://choosealicense.com/licenses/gpl-2.0/)
+[![DOI](https://zenodo.org/badge/488270412.svg)](https://zenodo.org/doi/10.5281/zenodo.11551780)
 <!-- badges: end -->
 
 
