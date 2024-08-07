@@ -26,8 +26,7 @@ Conserving the beauty of the world's reef fish communities <img src="https://raw
 
 This research compendium provides code and data used to reproduce analyses and figures of the paper: 
 
-> McLean _et al._ (2024) Conserving the beauty of the world's reef fish communities. Submitted to **Nature Sustainability**.
-
+> McLean _et al._ (2024) Conserving the beauty of the world's reef fish communities.
 
 Resources:
 
