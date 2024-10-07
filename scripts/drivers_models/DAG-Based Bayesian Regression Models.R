@@ -27,6 +27,7 @@ if(!require(rstan)){install.packages("rstan"); library(rstan)}
 if(!require(bayestestR)){install.packages("bayestestR"); library(bayestestR)}
 if(!require(readr)){install.packages("readr"); library(readr)}
 if(!require(performance)){install.packages("performance"); library(performance)}
+if(!require(glmmTMB)){install.packages("glmmTMB"); library(glmmTMB)}
 if(!require(tibble)){install.packages("tibble"); library(tibble)}
 if(!require(dplyr)){install.packages("dplyr"); library(dplyr)}
 
@@ -43,6 +44,14 @@ standardized_data <-  read_rds("outputs/standardized_data.rds")
 ncores = detectCores()
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
+
+######################################
+## SET GLOBAL PRIORS FOR ALL MODELS ##
+## ###################################
+
+prior <- c(set_prior("normal(0,3)", class = "b"),
+           set_prior("normal(0,3)", class = "Intercept"),
+           set_prior("exp)", class = "sd"))
 
 #'#######################################################
 #' NOW RUN THE INDIVIDUAL MODELS FOR EACH PREDICTOR
@@ -62,9 +71,7 @@ sst_model_formula <- bf(log(aesthe_survey) ~ sst_mean +
 
 sst_model <- brm(sst_model_formula,
                  data=standardized_data,
-                 chains=4, iter=4000, cores=ncores,
-                 c(set_prior("normal(0,3)", class = "b"),
-                   set_prior("normal(0,3)", class="Intercept")))
+                 prior=prior)
 
 saveRDS(sst_model, "outputs/BIG_FILES/sst_model.rds")
 sst_model <- read_rds("outputs/BIG_FILES/sst_model.rds")
@@ -86,8 +93,7 @@ gravity_model_formula <- bf(log(aesthe_survey) ~ gravtot2 +
 gravity_model <- brm(gravity_model_formula,
                      data=standardized_data,
                      chains=4, iter=4000, cores=ncores,
-                     c(set_prior("normal(0,3)", class = "b"),
-                       set_prior("normal(0,3)", class="Intercept")))
+                     prior=prior)
 
 saveRDS(gravity_model, "outputs/BIG_FILES/gravity_model.rds")
 gravity_model <- read_rds("outputs/BIG_FILES/gravity_model.rds")
@@ -113,8 +119,7 @@ NPP_model_formula <- bf(log(aesthe_survey) ~ NPP_mean +
 NPP_model <- brm(NPP_model_formula,
                  data=standardized_data,
                  chains=4, iter=4000, cores=ncores,
-                 c(set_prior("normal(0,3)", class = "b"),
-                   set_prior("normal(0,3)", class="Intercept")))
+                 prior=prior)
 
 saveRDS(NPP_model, "outputs/BIG_FILES/NPP_model.rds")
 NPP_model <- read_rds("outputs/BIG_FILES/NPP_model.rds")
@@ -135,8 +140,7 @@ depth_model_formula <- bf(log(aesthe_survey) ~ Depth +
 depth_model <- brm(depth_model_formula,
                    data=standardized_data,
                    chains=4, iter=4000, cores=ncores,
-                   c(set_prior("normal(0,3)", class = "b"),
-                     set_prior("normal(0,3)", class="Intercept")))
+                   prior=prior)
 
 saveRDS(depth_model, "outputs/BIG_FILES/depth_model.rds")
 depth_model <- read_rds("outputs/BIG_FILES/depth_model.rds")
@@ -158,8 +162,7 @@ fshd_model_formula <- bf(log(aesthe_survey) ~ fshD +
 fshd_model <- brm(fshd_model_formula,
                   data=standardized_data,
                   chains=4, iter=4000, cores=ncores,
-                  c(set_prior("normal(0,3)", class = "b"),
-                    set_prior("normal(0,3)", class="Intercept")))
+                  prior=prior)
 
 saveRDS(fshd_model, "outputs/BIG_FILES/fshd_model.rds")
 fshd_model <- read_rds("outputs/BIG_FILES/fshd_model.rds")
@@ -182,8 +185,7 @@ HDI_model_formula <- bf(log(aesthe_survey) ~ HDI2017 +
 HDI_model <- brm(HDI_model_formula,
                  data=standardized_data,
                  chains=4, iter=4000, cores=ncores,
-                 c(set_prior("normal(0,3)", class = "b"),
-                   set_prior("normal(0,3)", class="Intercept")))
+                 prior=prior)
 
 saveRDS(HDI_model, "outputs/BIG_FILES/HDI_model.rds")
 HDI_model <- read_rds("outputs/BIG_FILES/HDI_model.rds")
@@ -206,8 +208,7 @@ MPA_model_formula  <- bf(log(aesthe_survey) ~ MPA +
 MPA_model <- brm(MPA_model_formula,
                  data=standardized_data,
                  chains=4, iter=4000, cores=ncores,
-                 c(set_prior("normal(0,3)", class = "b"),
-                   set_prior("normal(0,3)", class="Intercept")))
+                 prior=prior)
 
 saveRDS(MPA_model, "outputs/BIG_FILES/MPA_model.rds")
 MPA_model <- read_rds("outputs/BIG_FILES/MPA_model.rds")
@@ -234,8 +235,7 @@ benthic_PC1_model_formula <-
 benthic_PC1_model <- brm(benthic_PC1_model_formula,
                          data=standardized_data,
                          chains=4, iter=4000, cores=ncores,
-                         c(set_prior("normal(0,3)", class = "b"),
-                           set_prior("normal(0,3)", class="Intercept")))
+                         prior=prior)
 
 saveRDS(benthic_PC1_model, "outputs/BIG_FILES/benthic_PC1_model.rds")
 benthic_PC1_model <- read_rds("outputs/BIG_FILES/benthic_PC1_model.rds")
@@ -262,8 +262,7 @@ benthic_PC2_model_formula <-
 benthic_PC2_model <- brm(benthic_PC2_model_formula,
                          data=standardized_data,
                          chains=4, iter=4000, cores=ncores,
-                         c(set_prior("normal(0,3)", class = "b"),
-                           set_prior("normal(0,3)", class="Intercept")))
+                         prior=prior)
 
 saveRDS(benthic_PC2_model, "outputs/BIG_FILES/benthic_PC2_model.rds")
 benthic_PC2_model <- read_rds("outputs/BIG_FILES/benthic_PC2_model.rds")
@@ -286,8 +285,7 @@ DHW_model_formula <- bf(log(aesthe_survey) ~ dhw_mean +
 DHW_model <- brm(DHW_model_formula,
                  data=standardized_data,
                  chains=4, iter=4000, cores=ncores,
-                 c(set_prior("normal(0,3)", class = "b"),
-                   set_prior("normal(0,3)", class="Intercept")))
+                 prior=prior)
 
 saveRDS(DHW_model, "outputs/BIG_FILES/DHW_model.rds")
 DHW_model <- read_rds("outputs/BIG_FILES/DHW_model.rds")
@@ -355,12 +353,39 @@ posterior_summary(dag_output, probs=c(0.10,0.90))
 ## MODEL CHECKING ##
 ####################
 
+# READ MODELS IN TO START HERE
+sst_model <- read_rds("outputs/BIG_FILES/sst_model.rds")
+gravity_model <- read_rds("outputs/BIG_FILES/gravity_model.rds")
+NPP_model <- read_rds("outputs/BIG_FILES/NPP_model.rds")
+depth_model <- read_rds("outputs/BIG_FILES/depth_model.rds")
+fshd_model <- read_rds("outputs/BIG_FILES/fshd_model.rds")
+HDI_model <- read_rds("outputs/BIG_FILES/HDI_model.rds")
+MPA_model <- read_rds("outputs/BIG_FILES/MPA_model.rds")
+benthic_PC1_model <- read_rds("outputs/BIG_FILES/benthic_PC1_model.rds")
+benthic_PC2_model <- read_rds("outputs/BIG_FILES/benthic_PC2_model.rds")
+DHW_model <- read_rds("outputs/BIG_FILES/DHW_model.rds")
+
+dev.size()
+dev.size(units = "in")
+dev.size(units = "px")
+dev.size(units= "cm")
+
+dev.off()
+
 # SST MODEL
-performance::check_model(sst_model) 
+performance::check_model(sst_model, panel = TRUE) 
   #, check = "vif") # GOOD, POSTERIOR COULD BE BETTER, VIF HIGH DUE TO LATITUDE AND SST
 #graphics.off()
 #plot(sst_model, variable="b_sst_mean")
 #r2_bayes(sst_model)
+
+ggsave("figures_tables/model_checks/sst_model_check.png",
+       dpi = 300,
+       height = 10, width= 8, 
+       units = "in",
+       device = "png"
+) 
+
 
 # NPP MODEL
 performance::check_model(NPP_model)
@@ -369,11 +394,25 @@ performance::check_model(NPP_model)
 #plot(NPP_model,variable="b_NPP_mean")
 #r2_bayes(NPP_model)
 
+ggsave("figures_tables/model_checks/NPP_model_check.png",
+       dpi = 300,
+       height = 10, width= 8, 
+       units = "in",
+       device = "png"
+) 
+
 # DEPTH MODEL
 performance::check_model(depth_model) # GOOD
 #graphics.off()
 #plot(depth_model, variable="b_Depth")
 #r2_bayes(depth_model)
+
+ggsave("figures_tables/model_checks/depth_model_check.png",
+       dpi = 300,
+       height = 10, width= 8, 
+       units = "in",
+       device = "png"
+)
 
 # GRAVITY MODEL
 performance::check_model(gravity_model) # GOOD
@@ -381,11 +420,25 @@ performance::check_model(gravity_model) # GOOD
 #plot(gravity_model, variable="b_gravtot2")
 #r2_bayes(gravity_model)
 
+ggsave("figures_tables/model_checks/gravity_model_check.png",
+       dpi = 300,
+       height = 10, width= 8, 
+       units = "in",
+       device = "png"
+)
+
 # MPA MODEL
 performance::check_model(MPA_model) # GOOD
 #graphics.off()
 #plot(MPA_model, variable=c("b_MPANotake","b_MPARestrictedtake"))
 #r2_bayes(MPA_model)
+
+ggsave("figures_tables/model_checks/MPA_model_check.png",
+       dpi = 300,
+       height = 10, width= 8, 
+       units = "in",
+       device = "png"
+)
 
 # BENTHIC MODEL 1
 performance::check_model(benthic_PC1_model) # GOOD, HIGH VIF FROM LATITUDE AND SST
@@ -393,11 +446,25 @@ performance::check_model(benthic_PC1_model) # GOOD, HIGH VIF FROM LATITUDE AND S
 #plot(benthic_PC1_model,variable="b_PC1_imputed")
 #r2_bayes(benthic_PC1_model)
 
+ggsave("figures_tables/model_checks/benthic_pc1_model_check.png",
+       dpi = 300,
+       height = 10, width= 8, 
+       units = "in",
+       device = "png"
+)
+
 # BENTHIC MODEL 2
 performance::check_model(benthic_PC2_model) # GOOD, HIGH VIF FROM LAT AND SST
 #graphics.off()
 #plot(benthic_PC2_model, variable="b_PC2_imputed")
 #r2_bayes(benthic_PC2_model)
+
+ggsave("figures_tables/model_checks/benthic_pc2_model_check.png",
+       dpi = 300,
+       height = 10, width= 8, 
+       units = "in",
+       device = "png"
+)
 
 # DHW MODEL
 performance::check_model(DHW_model) # GOOD, HIGH VIF FROM LAT AND SST
@@ -405,17 +472,38 @@ performance::check_model(DHW_model) # GOOD, HIGH VIF FROM LAT AND SST
 #plot(DHW_model, variable="b_dhw_mean")
 #r2_bayes(DHW_model)
 
+ggsave("figures_tables/model_checks/DHW_model_check.png",
+       dpi = 300,
+       height = 10, width= 8, 
+       units = "in",
+       device = "png"
+)
+
 # HDI MODEL
 performance::check_model(HDI_model) # GOOD, HIGH VIF FROM LAT AND SST
 #graphics.off()
 #plot(HDI_model,variable="b_HDI2017")
 #r2_bayes(HDI_model)
 
+ggsave("figures_tables/model_checks/HDI_model_check.png",
+       dpi = 300,
+       height = 10, width= 8, 
+       units = "in",
+       device = "png"
+)
+
 # FISHERIES DEPENDENCY MODEL
 performance::check_model(fshd_model) # GOOD
 #graphics.off()
 #plot(fshd_model, variable="b_fshD")
 #r2_bayes(fshd_model)
+
+ggsave("figures_tables/model_checks/fshd_model_model_check.png",
+       dpi = 300,
+       height = 10, width= 8, 
+       units = "in",
+       device = "png"
+)
 
 
 ##############################################
@@ -435,8 +523,7 @@ sst_sens_formula <- bf(log(aesthe_survey) ~ sst_mean +
 sst_sense_model <- brm(sst_sens_formula,
                        data=standardized_data,
                        chains=4, iter=4000, cores=ncores,
-                       c(set_prior("normal(0,3)", class = "b"),
-                         set_prior("normal(0,3)", class="Intercept")))
+                       prior=prior)
 
 saveRDS(sst_sense_model, "outputs/BIG_FILES/sst_sense_model.rds")
 sst_sense_model <- read_rds("outputs/BIG_FILES/sst_sense_model.rds")
@@ -473,8 +560,7 @@ NPP_sens_formula <- bf(log(aesthe_survey) ~ NPP_mean +
 NPP_sens_model <- brm(NPP_sens_formula,
                       data=standardized_data,
                       chains=4, iter=4000, cores=ncores,
-                      c(set_prior("normal(0,3)", class = "b"),
-                        set_prior("normal(0,3)", class="Intercept")))
+                      prior=prior)
 
 saveRDS(NPP_sens_model, "outputs/BIG_FILES/NPP_sens_model.rds")
 NPP_sens_model <- read_rds("outputs/BIG_FILES/NPP_sens_model.rds")
@@ -508,8 +594,7 @@ DHW_sens_formula <- bf(log(aesthe_survey) ~ dhw_mean +
 DHW_sens_model <- brm(DHW_sens_formula,
                       data=standardized_data,
                       chains=4, iter=4000, cores=ncores,
-                      c(set_prior("normal(0,3)", class = "b"),
-                        set_prior("normal(0,3)", class="Intercept")))
+                      prior=prior)
 
 saveRDS(DHW_sens_model, "outputs/BIG_FILES/DHW_sens_model.rds")
 DHW_sens_model <- read_rds("outputs/BIG_FILES/DHW_sens_model.rds")
@@ -543,8 +628,7 @@ HDI_sens_formula <- bf(log(aesthe_survey) ~ HDI2017 +
 HDI_sens_model <- brm(HDI_sens_formula,
                       data=standardized_data,
                       chains=4, iter=4000, cores=ncores,
-                      c(set_prior("normal(0,3)", class = "b"),
-                        set_prior("normal(0,3)", class="Intercept")))
+                      prior=prior)
 
 saveRDS(HDI_sens_model, "outputs/BIG_FILES/HDI_sens_model.rds")
 HDI_sens_model <- read_rds("outputs/BIG_FILES/HDI_sens_model.rds")
@@ -585,8 +669,7 @@ sst_richness_formula <- bf(log(aesthe_survey) ~ sst_mean + nb_species +
 sst_richness_model <- brm(sst_richness_formula,
                  data=standardized_data,
                  chains=4, iter=4000, cores=ncores,
-                 c(set_prior("normal(0,3)", class = "b"),
-                   set_prior("normal(0,3)", class="Intercept")))
+                 prior=prior)
 
 saveRDS(sst_richness_model, "outputs/BIG_FILES/sst_richness_model.rds")
 sst_richness_model <- read_rds("outputs/BIG_FILES/sst_richness_model.rds")
@@ -609,8 +692,7 @@ gravity_richness_formula <- bf(log(aesthe_survey) ~ gravtot2 + nb_species +
 gravity_richness_model <- brm(gravity_richness_formula,
                      data=standardized_data,
                      chains=4, iter=4000, cores=ncores,
-                     c(set_prior("normal(0,3)", class = "b"),
-                       set_prior("normal(0,3)", class="Intercept")))
+                     prior=prior)
 
 saveRDS(gravity_richness_model, "outputs/BIG_FILES/gravity_richness_model.rds")
 gravity_richness_model <- read_rds("outputs/BIG_FILES/gravity_richness_model.rds")
@@ -637,8 +719,7 @@ NPP_richness_formula <- bf(log(aesthe_survey) ~ NPP_mean + nb_species +
 NPP_richness_model <- brm(NPP_richness_formula,
                  data=standardized_data,
                  chains=4, iter=4000, cores=ncores,
-                 c(set_prior("normal(0,3)", class = "b"),
-                   set_prior("normal(0,3)", class="Intercept")))
+                 prior=prior)
 
 saveRDS(NPP_richness_model, "outputs/BIG_FILES/NPP_richness_model.rds")
 NPP_richness_model <- read_rds("outputs/BIG_FILES/NPP_richness_model.rds")
@@ -659,8 +740,7 @@ depth_richness_formula <- bf(log(aesthe_survey) ~ Depth + nb_species +
 depth_richness_model <- brm(depth_richness_formula,
                    data=standardized_data,
                    chains=4, iter=4000, cores=ncores,
-                   c(set_prior("normal(0,3)", class = "b"),
-                     set_prior("normal(0,3)", class="Intercept")))
+                   prior=prior)
 
 saveRDS(depth_richness_model, "outputs/BIG_FILES/depth_richness_model.rds")
 depth_richness_model <- read_rds("outputs/BIG_FILES/depth_richness_model.rds")
@@ -683,8 +763,7 @@ fshd_richness_formula <- bf(log(aesthe_survey) ~ fshD + nb_species +
 fshd_richness_model <- brm(fshd_richness_formula,
                   data=standardized_data,
                   chains=4, iter=4000, cores=ncores,
-                  c(set_prior("normal(0,3)", class = "b"),
-                    set_prior("normal(0,3)", class="Intercept")))
+                  prior=prior)
 
 saveRDS(fshd_richness_model, "outputs/BIG_FILES/fshd_richness_model.rds")
 fshd_richness_model <- read_rds("outputs/BIG_FILES/fshd_richness_model.rds")
@@ -707,8 +786,7 @@ HDI_richness_formula <- bf(log(aesthe_survey) ~ HDI2017 + nb_species +
 HDI_richness_model <- brm(HDI_richness_formula,
                  data=standardized_data,
                  chains=4, iter=4000, cores=ncores,
-                 c(set_prior("normal(0,3)", class = "b"),
-                   set_prior("normal(0,3)", class="Intercept")))
+                 prior=prior)
 
 saveRDS(HDI_richness_model, "outputs/BIG_FILES/HDI_richness_model.rds")
 HDI_richness_model <- read_rds("outputs/BIG_FILES/HDI_richness_model.rds")
@@ -731,8 +809,7 @@ MPA_richness_formula  <- bf(log(aesthe_survey) ~ MPA + nb_species +
 MPA_richness_model <- brm(MPA_richness_formula,
                  data=standardized_data,
                  chains=4, iter=4000, cores=ncores,
-                 c(set_prior("normal(0,3)", class = "b"),
-                   set_prior("normal(0,3)", class="Intercept")))
+                 prior=prior)
 
 saveRDS(MPA_richness_model, "outputs/BIG_FILES/MPA_richness_model.rds")
 MPA_richness_model <- read_rds("outputs/BIG_FILES/MPA_richness_model.rds")
@@ -759,8 +836,7 @@ benthic_PC1_richness_formula <-
 benthic_PC1_richness_model <- brm(benthic_PC1_richness_formula,
                          data=standardized_data,
                          chains=4, iter=4000, cores=ncores,
-                         c(set_prior("normal(0,3)", class = "b"),
-                           set_prior("normal(0,3)", class="Intercept")))
+                         prior=prior)
 
 saveRDS(benthic_PC1_richness_model, "outputs/BIG_FILES/benthic_PC1_richness_model.rds")
 benthic_PC1_richness_model <- read_rds("outputs/BIG_FILES/benthic_PC1_richness_model.rds")
@@ -787,8 +863,7 @@ benthic_PC2_richness_formula <-
 benthic_PC2_richness_model <- brm(benthic_PC2_richness_formula,
                          data=standardized_data,
                          chains=4, iter=4000, cores=ncores,
-                         c(set_prior("normal(0,3)", class = "b"),
-                           set_prior("normal(0,3)", class="Intercept")))
+                         prior=prior)
 
 saveRDS(benthic_PC2_richness_model, "outputs/BIG_FILES/benthic_PC2_richness_model.rds")
 benthic_PC2_richness_model <- read_rds("outputs/BIG_FILES/benthic_PC2_richness_model.rds")
@@ -811,8 +886,7 @@ DHW_richness_formula <- bf(log(aesthe_survey) ~ dhw_mean + nb_species +
 DHW_richness_model <- brm(DHW_richness_formula,
                  data=standardized_data,
                  chains=4, iter=4000, cores=ncores,
-                 c(set_prior("normal(0,3)", class = "b"),
-                   set_prior("normal(0,3)", class="Intercept")))
+                 prior=prior)
 
 saveRDS(DHW_richness_model, "outputs/BIG_FILES/DHW_richness_model.rds")
 DHW_richness_model <- read_rds("outputs/BIG_FILES/DHW_richness_model.rds")
@@ -920,12 +994,6 @@ performance::check_model(depth_richness_model) #
 # graphics.off()
 # plot(depth_richness_model)
 # r2_bayes(depth_richness_model)
-
-# BIOMASS MODEL
-performance::check_model(Biom_richness_model) # 
-# graphics.off()
-# plot(Biom_richness_model)
-# r2_bayes(Biom_richness_model)
 
 # GRAVITY MODEL
 performance::check_model(gravity_richness_model) # 
