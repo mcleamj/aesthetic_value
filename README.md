@@ -28,14 +28,6 @@ This research compendium provides code and data used to reproduce analyses and f
 
 > McLean _et al._ (2024) Conserving the beauty of the world's reef fish communities.
 
-Resources:
-
-- Manuscript : [link](https://docs.google.com/document/d/1gE_Z4GQoFHjzEu0WmANyfg5s1eBWuYOTKFAO3kYfxmY/edit#)
-- Supplementary materials: [link](https://docs.google.com/document/d/18sS0vOqeFM_fM3VgSM2i-P693Ey9xNt_jW1McoKyZew/edit)
-- Figures: [link](https://docs.google.com/document/d/1r4qGwa2xJKDPo24HSP9H05pNCAT_VrS4sW-Qk_q5BZg/edit)
-
-
-
 ## Data sources
 
 This project uses the following databases:
