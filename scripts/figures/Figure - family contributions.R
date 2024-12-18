@@ -11,12 +11,9 @@
 ## LIBRARY PACKAGES ##
 ######################
 
-if(!require(data.table)){install.packages("data.table"); library(data.table)}
-if(!require(mapproj)){install.packages("mapproj"); library(mapproj)}
 if(!require(plot3D)){install.packages("plot3D"); library(plot3D)}
 if(!require(pals)){install.packages("pals"); library(pals)}
 if(!require(brms)){install.packages("brms"); library(brms)}
-if(!require(FD)){install.packages("FD"); library(FD)}
 if(!require(bayesplot)){install.packages("bayesplot"); library(bayesplot)}
 if(!require(parallel)){install.packages("parallel"); library(parallel)}
 if(!require(rstan)){install.packages("rstan"); library(rstan)}
@@ -29,7 +26,7 @@ if(!require(dplyr)){install.packages("dplyr"); library(dplyr)}
 ## IMPORT DATA FROM OUTPUTS ##
 ##############################
 
-fit_list <- read_rds("outputs/fit_list.rds")
+fit_list <- read_rds("outputs/abundance_fit_list.rds")
 family_info <- read_rds("outputs/family_info.rds")
 
 ##############################################
@@ -70,18 +67,25 @@ MPA_effect_summary <- MPA_effect_summary %>%
   arrange((Estimate))
 MPA_effect_summary$log_beauty <- log(MPA_effect_summary$aesthe_score)
 
-# TAKE ONLY THE FAMILIES WITH HIGH MPA EFFECT (TOP X%)
+# # TAKE ONLY THE FAMILIES WITH HIGH MPA EFFECT (TOP X%)
+# top_MPA_families <- MPA_effect_summary %>%
+#   filter(Estimate >= quantile(MPA_effect_summary$Estimate, prob=0.75))
+# 
+# bottom_MPA_families <- MPA_effect_summary %>%
+#   filter(Estimate <= quantile(MPA_effect_summary$Estimate, prob=0.25))
+
+# TAKE ONLY THE FAMILIES WITH HIGH POS OR NEG MPA EFFECT (TOP X%)
 top_MPA_families <- MPA_effect_summary %>%
-  filter(Estimate >= quantile(MPA_effect_summary$Estimate, prob=0.75))
-
-bottom_MPA_families <- MPA_effect_summary %>%
-  filter(Estimate <= quantile(MPA_effect_summary$Estimate, prob=0.25))
-
-
+  filter(abs_Estimate >= quantile(MPA_effect_summary$abs_Estimate, prob=0.75))
 
 #########################################################
 ## FOREST PLOT OF MPA EFFECT COLORED BY AVERAGE BEAUTY ##
 #########################################################
+
+top_MPA_families <- top_MPA_families %>%
+  arrange(aesthe_score)
+
+source("R/variablecol.R")
 
 plot_colors <- variablecol(colvar = top_MPA_families$aesthe_score, 
                            col = jet(n=nrow(top_MPA_families)), 
@@ -118,6 +122,8 @@ axis(2, at = seq(1:nrow(top_MPA_families)),
 
 title("Family Contributions to MPA Effect",
       line=1, font.main=1, cex.main=1.5)
+
+
 
 
 

@@ -14,6 +14,8 @@
 
 rm(list = ls())
 library(ggplot2)
+library(tidyverse)
+library(lme4)
 
 # INIT ----
 
@@ -26,7 +28,8 @@ library(ggplot2)
     
     aesthe_species <- read.csv2(here::here("outputs", "aesthe_species.csv"))
     sp_pres_matrix <- readRDS(here::here("outputs", "sp_pres_matrix.rds"))
-    
+    abund_matrix <- readRDS(here::here("outputs", "sp_abund_matrix.rds"))
+
 # ----
     
 # COMPUTE AESTHETICS ----
@@ -42,8 +45,20 @@ library(ggplot2)
                                # presence_absence of the species of the survey
                                 
                                 vector_abs_pres <- sp_pres_matrix[which(sp_pres_matrix$SurveyID == survey_id),]
-                                
                                 vector_abs_pres <- vector_abs_pres[,-1]
+                                
+                                vector_abund <- abund_matrix[which(abund_matrix$SurveyID == survey_id),]
+                                vector_abund <- vector_abund[,-1]
+                                
+                                vector_abund <- t(vector_abund) %>%
+                                  as.data.frame() %>%
+                                  rename(abundance = V1) %>%
+                                  filter(abundance > 0) %>%
+                                  rownames_to_column("sp_name") %>%
+                                  mutate(sp_name = str_replace(sp_name, "_", " ")) %>%
+                                  left_join(aesthe_species, by="sp_name") %>%
+                                  mutate(abund_wtd_effect = log(abundance) * aesthe_effect)
+                                
                                
                                # species present
                                 sp_survey <- colnames(vector_abs_pres)[vector_abs_pres[1,]>0]
@@ -52,9 +67,14 @@ library(ggplot2)
                                 nb_species <- length(sp_survey)
                                 
                                # aesthe of the survey
-                                E <- intercept_sr + slope_sr * log(nb_species) + sum(aesthe_species$aesthe_effect[aesthe_species$sp_name %in%  gsub("_"," ",sp_survey)])
-                                score <-  exp(E)
+                                E_presence <- intercept_sr + slope_sr * log(nb_species) + 
+                                  sum(aesthe_species$aesthe_effect[aesthe_species$sp_name %in%  gsub("_"," ",sp_survey)])
+                                score_presence <-  exp(E_presence)
 
+                                E_abundance <- intercept_sr + slope_sr * log(nb_species) + 
+                                  sum(vector_abund$abund_wtd_effect)
+                                score_abundance <- exp(E_abundance)
+                                
                                 E <-  intercept_sr + slope_sr * log(nb_species)
                                 score_SR  <-  exp(E) 
                                 
@@ -64,14 +84,163 @@ library(ggplot2)
                                 nb_sp_pos_survey   <-  length(which(vect>0))
                                 nb_sp_neg_survey   <-  length(which(vect<0))
                                 
-                                cbind.data.frame(SurveyID=surveyid_vect[i],nb_species=nb_species,aesthe_survey=score,aesthe_SR_survey=score_SR,
-                                                 nb_sp_pos_survey=nb_sp_pos_survey, nb_sp_neg_survey=nb_sp_neg_survey)
+                                cbind.data.frame(SurveyID=surveyid_vect[i],
+                                                 nb_species=nb_species,
+                                                 aesthe_survey_pres=score_presence,
+                                                 aesthe_survey_abund=score_abundance,
+                                                 aesthe_SR_survey=score_SR,
+                                                 nb_sp_pos_survey=nb_sp_pos_survey, 
+                                                 nb_sp_neg_survey=nb_sp_neg_survey)
 
                              }, mc.cores = parallel::detectCores()-1))
       
-      plot(survey_aesth$nb_species,survey_aesth$aesthe_survey)
+      par(mfrow=c(1,3))
+      plot(survey_aesth$nb_species,survey_aesth$aesthe_survey_pres,
+           xlab="Nb Species", ylab="Aesthetic Value (Presence)")
+      points(survey_aesth$nb_species, survey_aesth$aesthe_SR_survey,col=2,pch=19)
+      
+      plot(survey_aesth$nb_species,survey_aesth$aesthe_survey_abund,
+           xlab="Nb Species", ylab="Aesthetic Value (Abundance)")
+      points(survey_aesth$nb_species, survey_aesth$aesthe_SR_survey,col=2,pch=19)
+      
+      plot(survey_aesth$aesthe_survey_pres,survey_aesth$aesthe_survey_abund,
+           xlab="Aesthetic Value (Presence)", ylab="Aesthetic Value (Abundance)")
+      
+      
       
       write.csv(survey_aesth, here::here("outputs", "survey_aesth.csv"), row.names = FALSE)
+      
+      
+      # PLOT ABUNDANCE VS AESTHETIC SCORE
+      
+      abund_long <- abund_matrix %>%
+        column_to_rownames("SurveyID") %>%
+        pivot_longer(cols = everything(),
+                       names_to = "sp_name",
+                     values_to = "abundance") %>%
+        mutate(sp_name = str_replace(sp_name, "_", " ")) %>%
+        filter(abundance > 0) %>%
+        left_join(aesthe_species, by="sp_name") %>%
+        group_by(sp_name) %>%  # Group by species name
+        mutate(aesthe_decile = ntile(aesthe_score, 10)) %>%  # Bin abundance into deciles
+        ungroup()  # Ungroup after mutation
+      
+      hist(log1p(abund_long$abundance))
+      
+      ggplot(abund_long, aes(x=aesthe_decile, group=aesthe_decile, y=log(abundance))) +
+        geom_boxplot()
+      
+      test <- abund_long %>%
+        select(sp_name, aesthe_score, abundance) %>%
+        group_by(sp_name) %>% 
+        summarise_all(.funs=mean) %>%
+        mutate(log_abund = log(abundance)) 
+        
+      ggplot(test, aes(x=aesthe_score,y=log_abund)) +
+        geom_point() +
+        geom_smooth(method="lm")
+        
+      
+      ###################################################################
+      ## RE COMPUTE AESTETHETICS WHILE INCORPORATING MODEL UNCERTAINTY ##
+      ###################################################################
+      
+      # LOAD THE POSTERIOR DISTRIBUTIONS
+      tribot_effects <- read_rds("data/tribot_effects.rds")
+      
+      n_samples <- nrow(tribot_effects)
+      n_iterations <- length(surveyid_vect)
+      
+      # Generate predictions for each posterior sample
+        
+      results_list <- vector("list", n_iterations)
+      
+        for(i in 1:n_iterations){
+          
+          survey_id <-  surveyid_vect[i]
+          # presence_absence of the species of the survey
+          
+          vector_abs_pres <- sp_pres_matrix[which(sp_pres_matrix$SurveyID == survey_id),]
+          vector_abs_pres <- vector_abs_pres[,-1]
+          
+          vector_abund <- abund_matrix[which(abund_matrix$SurveyID == survey_id),]
+          vector_abund <- vector_abund[,-1]
+          
+          vector_abund <- t(vector_abund) %>%
+            as.data.frame() %>%
+            rename(abundance = V1) %>%
+            filter(abundance > 0) %>%
+            rownames_to_column("sp_name") %>%
+            mutate(sp_name = str_replace(sp_name, "_", " ")) %>%
+            left_join(aesthe_species, by="sp_name") %>%
+            mutate(abund_wtd_effect = log(abundance) * aesthe_effect)
+          
+          
+          # species present
+          sp_survey <- colnames(vector_abs_pres)[vector_abs_pres[1,]>0]
+          
+          # number of species of the survey
+          nb_species <- length(sp_survey)
+          
+          score_holder <- matrix(NA, nrow = n_samples, ncol = 3)
+          colnames(score_holder) <- c("score_presence", "score_abundance", "score_SR")
+          
+          for(j in 1:n_samples){
+          
+          # aesthe of the survey
+          E_presence <- tribot_effects$b_Intercept[j] + tribot_effects$b_logsr[j] * log(nb_species) + 
+            sum(aesthe_species$aesthe_effect[aesthe_species$sp_name %in%  gsub("_"," ",sp_survey)])
+          score_presence <-  exp(E_presence)
+          
+          E_abundance <- tribot_effects$b_Intercept[j] + tribot_effects$b_logsr[j] * log(nb_species) + 
+            sum(vector_abund$abund_wtd_effect)
+          score_abundance <- exp(E_abundance)
+          
+          E <-  tribot_effects$b_Intercept[j] + tribot_effects$b_logsr[j] * log(nb_species)
+          score_SR  <-  exp(E)
+          
+          score_holder[j,] <- c(score_presence, score_abundance, score_SR)
+          
+          }
+          
+          score_holder <- as.data.frame(score_holder)
+          
+          score_presence <- score_holder %>%
+            select(score_presence) %>%
+            summarise(median(score_presence)) %>%
+            as.numeric()
+          
+          score_abundance <- score_holder %>%
+            select(score_abundance) %>%
+            summarise(median(score_abundance)) %>%
+            as.numeric()
+          
+          score_SR <- score_holder %>%
+            select(score_SR) %>%
+            summarise(median(score_SR)) %>%
+            as.numeric()
+          
+          # compute the number of species with positive and negative effect in each survey
+          vect  <-  (aesthe_species$aesthe_effect * vector_abs_pres)
+          nb_sp_pos_survey   <-  length(which(vect>0))
+          nb_sp_neg_survey   <-  length(which(vect<0))
+          
+          results_list[[i]]  <- data.frame(SurveyID=surveyid_vect[i],
+                           nb_species=nb_species,
+                           aesthe_survey_pres=score_presence,
+                           aesthe_survey_abund=score_abundance,
+                           aesthe_SR_survey=score_SR,
+                           nb_sp_pos_survey=nb_sp_pos_survey, 
+                           nb_sp_neg_survey=nb_sp_neg_survey)
+
+        
+        
+        }
+      
+      results <- do.call(rbind, results_list)
+      
+      
+      
 
 # ---- 
     

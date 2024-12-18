@@ -45,13 +45,6 @@ benthic_PCA <- benthic_PCA %>%
 
 model_data <- merge(model_data, benthic_PCA, by = "SurveyID", all=T)
 
-#############################################
-## REPLACE TEMPERATE BENTHIC 'DATA' WITH 0 ##
-#############################################
-
-model_data$PC1_imputed[model_data$Temperature_Zone=="Temperate"] <- 0
-model_data$PC2_imputed[model_data$Temperature_Zone=="Temperate"] <- 0
-
 #####################################
 ## IMPORT AND ATTACH AESTHETIC DATA #
 #####################################
@@ -59,6 +52,44 @@ model_data$PC2_imputed[model_data$Temperature_Zone=="Temperate"] <- 0
 aesthetic_survey_data <- read.csv("outputs/survey_aesth.csv")
 
 model_data <- merge(model_data, aesthetic_survey_data, by="SurveyID")
+
+##########################################################
+## IMPORT AND ATTACH COMMUNITY WEIGHTED MEAN AESTHETICS ##
+##########################################################
+
+cwm_aes <- read_rds("outputs/cwm_aes.rds") %>%
+  rename(cwm_aes = aesthe_score)
+com_sum_aes <- read_rds("outputs/com_sum_aes.rds") %>%
+  rename(com_sum_aes = aesthe_score)
+
+model_data <- merge(model_data, cwm_aes, by="SurveyID")
+model_data <- merge(model_data, com_sum_aes, by="SurveyID")
+
+##############################################
+## IMPORT AND ATTACH TROPHIC STRUCTURE DATA ##
+##############################################
+
+trophic_composition <- readRDS("outputs/trophic_composition.rds")
+
+model_data <- merge(model_data, trophic_composition, by="SurveyID")
+
+################################################
+## IMPORT AND ATTACH TROPHIC COMPOSITION DATA ##
+################################################
+
+taxo_stucture <- readRDS("outputs/taxo_structure.rds")
+
+model_data <- merge(model_data, taxo_stucture, by="SiteCode", all.x=TRUE)
+
+#############################################
+## IMPORT AND ATTACH PHYLOGENETIC AGE DATA ##
+#############################################
+
+phylo_age_occurence <- read_rds("outputs/cwm_age_occurence.rds")
+phylo_age_abundance <- read_rds("outputs/cwm_age_abundance.rds")
+
+model_data <- merge(model_data, phylo_age_occurence, by="SurveyID")
+model_data <- merge(model_data, phylo_age_abundance, by="SurveyID")
 
 ############################
 ## HOW MUCH MISSING DATA? ##
@@ -103,23 +134,27 @@ for(i in 1:ncol(num_vars)){
   
 }
 
-# NB_SPECIES, TAXO_ENTROPY, GRAVITY, WAVE ENERGY, PHOSPHATE, NITRATE, NPP, BIOMASS ALL RIGHT-SKEWED, SHOULD BE LOG-TRANSFORMED
+# NB_SPECIES, TAXO_ENTROPY, PHYLO RICHNESS, GRAVITY, WAVE ENERGY, PHOSPHATE, NITRATE, NPP, 
+# BIOMASS, PHYLOGENETIC AGE, ALL RIGHT-SKEWED, SHOULD BE LOG-TRANSFORMED
 # DEPTH AND DHW COULD POTENTIALLY BE TRANSFORMED AS WELL
 
 # Check minimum values
 dplyr::summarise(model_data,
                  dplyr::across(c(nb_species, taxo_entropy, 
+                                 phylo_richness,
                                  gravtot2, wave_energy, 
                                  BO_phosphate, BO_nitrate,
                                  NPP_mean, Biomass,
-                                 Depth, dhw_mean),
+                                 Depth, dhw_mean,
+                                 phylo_age_abundance, phylo_age_occurence),
                                min, na.rm=TRUE))
 # Transform data
 model_data <- dplyr::mutate(model_data,
                             dplyr::across(c(nb_species, taxo_entropy, 
                                             gravtot2, wave_energy, 
                                             BO_phosphate, BO_nitrate,
-                                            NPP_mean, Biomass),
+                                            NPP_mean, Biomass,
+                                            phylo_age_abundance, phylo_age_occurence),
                                           log))
 
 # CREATE ABSOLUTE VALUE OF LATITUDE
@@ -134,11 +169,29 @@ z_score_2sd <- function(x){ (x - mean(x,na.rm=T)) / (2*sd(x,na.rm=T))}
 
 z_vars <- model_data %>%
   select_if(is.numeric) %>%
-  select(-any_of(c("SurveyID","SiteLongitude","SiteLatitude","aesthe_survey"))) %>%
+  select(-any_of(c("SurveyID","SiteLongitude","SiteLatitude",
+                   "aesthe_survey_pres", "aesthe_survey_abund"))) %>%
   colnames()
 
 standardized_data <- model_data %>%
   mutate_if(colnames(model_data) %in% z_vars, z_score_2sd)
+
+#############################################
+## REPLACE TEMPERATE BENTHIC 'DATA' WITH 0 ##
+#############################################
+
+standardized_data$PC1_imputed[standardized_data$Temperature_Zone=="Temperate"] <- 0
+standardized_data$PC2_imputed[standardized_data$Temperature_Zone=="Temperate"] <- 0
+
+#################################
+## SAVE SURVEY ID AS CHARACTER ##
+#################################
+
+standardized_data$SurveyID <- as.character(standardized_data$SurveyID)
+
+###################
+## SAVE THE DATA ##
+###################
 
 saveRDS(standardized_data, "outputs/standardized_data.rds")
 standardized_data <-  read_rds("outputs/standardized_data.rds")

@@ -28,15 +28,6 @@ if(!require(dplyr)){install.packages("dplyr"); library(dplyr)}
 
 standardized_data <-  read_rds("outputs/standardized_data.rds")
 
-#############################
-## ADD TROPHIC COMPOSITION ##
-#############################
-
-trophic <- read_rds("outputs/trophic_composition.rds")
-
-standardized_data <- merge(standardized_data, trophic, 
-                           by="SurveyID")
-
 ##################################
 ## PARALLEL SETTINGS FOR MODELS ##
 ##################################
@@ -44,11 +35,6 @@ standardized_data <- merge(standardized_data, trophic,
 ncores = detectCores()
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
-
-
-
-
-
 
 ###################################################################
 #' TO ASSESS THE EFFECT OF EACH PATHWAY OF THE
@@ -68,7 +54,7 @@ options(mc.cores = parallel::detectCores())
 ## MPA TOTAL CAUSAL EFFECT FROM DAG-BASED MODELS ##
 ###################################################
 
-MPA_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+MPA_model_formula  <- bf(log(aesthe_survey_abund_abund) ~ MPA +
                            HDI2017 + # CONTROL
                            fshD + # CONTROL
                            gravtot2 + # CONTROL
@@ -93,7 +79,7 @@ MPA_post <- as.data.frame(as.matrix(MPA_model)) %>%
 ## TAXO DIVERSITY CONTRIBUTION ##
 #################################
 
-tax_div_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+tax_div_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA +
                                HDI2017 + # CONTROL
                                fshD + # CONTROL
                                gravtot2 + # CONTROL
@@ -127,7 +113,7 @@ colnames(tax_div_post) <- "tax_richness"
 ## FUN DIVERSITY CONTRIBUTION ##
 ################################
 
-fun_div_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+fun_div_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA +
                                HDI2017 + # CONTROL
                                fshD + # CONTROL
                                gravtot2 + # CONTROL
@@ -162,7 +148,7 @@ colnames(fun_div_post) <- "fun_richness"
 ## PHYLO DIVERSITY CONTRIBUTION ##
 ##################################
 
-phylo_div_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+phylo_div_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA +
                                  HDI2017 + # CONTROL
                                  fshD + # CONTROL
                                  gravtot2 + # CONTROL
@@ -196,7 +182,7 @@ colnames(phylo_div_post) <- "phylo_richness"
 ## BENTHIC PC1 CONTRIBUTION ##
 ##############################
 
-benthic_PC1_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+benthic_PC1_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA +
                                    HDI2017 + # CONTROL
                                    fshD + # CONTROL
                                    gravtot2 + # CONTROL
@@ -230,7 +216,7 @@ colnames(benthic_PC1_post) <- "PC1_Benthic"
 ## BENTHIC PC2 CONTRIBUTION ##
 ##############################
 
-benthic_PC2_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+benthic_PC2_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA +
                                    HDI2017 + # CONTROL
                                    fshD + # CONTROL
                                    gravtot2 + # CONTROL
@@ -266,7 +252,7 @@ colnames(benthic_PC2_post) <- "PC2_Benthic"
 
 # WHAT ABOUT DIRECTIONALITY OF PC AXES? - GOOD
 
-trophic_PC1_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+trophic_PC1_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA +
                                    HDI2017 + # CONTROL
                                    fshD + # CONTROL
                                    gravtot2 + # CONTROL
@@ -300,7 +286,7 @@ colnames(trophic_PC1_post) <- "PC1_Trophic"
 ## TROPHIC PC2 CONTRIBUTION ##
 ##############################
 
-trophic_PC2_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+trophic_PC2_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA +
                                    HDI2017 + # CONTROL
                                    fshD + # CONTROL
                                    gravtot2 + # CONTROL
@@ -336,7 +322,7 @@ colnames(trophic_PC2_post) <- "PC2_Trophic"
 
 # WHAT ABOUT DIRECTIONALITY OF PC AXES? - GOOD
 
-Taxo_PC1_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+Taxo_PC1_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA +
                                 HDI2017 + # CONTROL
                                 fshD + # CONTROL
                                 gravtot2 + # CONTROL
@@ -370,7 +356,7 @@ colnames(Taxo_PC1_post) <- "Taxo_PC1"
 ## Taxo PC2 CONTRIBUTION ##
 ##############################
 
-Taxo_PC2_model_formula  <- bf(log(aesthe_survey) ~ MPA +
+Taxo_PC2_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA +
                                 HDI2017 + # CONTROL
                                 fshD + # CONTROL
                                 gravtot2 + # CONTROL

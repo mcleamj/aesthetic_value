@@ -30,8 +30,11 @@ library(geiger)
 #########################################################################################
 # Load data
 
-survey_sp_biom <- readr::read_rds("outputs/sp_biomass_matrix.rds")
-survey_sp_biom <- survey_sp_biom %>%
+## UPDATED NOVEMBER 2024 TO ANALYZE WITH ABUNDANCE INSTEAD OF BIOMASS
+## PER PEER REVIEW  
+
+survey_sp_abund <- readr::read_rds("outputs/sp_abund_matrix.rds")
+survey_sp_abund <- survey_sp_abund %>%
   column_to_rownames("SurveyID") 
 
 survey_sp_occ <- readr::read_rds("outputs/sp_pres_matrix.rds")
@@ -46,43 +49,43 @@ sp_traits <- sp_traits %>%
 
 sp_traits <- sp_traits %>%
   mutate(Species = str_replace(Species, " ", "_")) %>%
-  filter(Species %in% colnames(survey_sp_biom))
+  filter(Species %in% colnames(survey_sp_abund))
 
-survey_sp_biom <- survey_sp_biom %>%
-  select_if(colnames(survey_sp_biom) %in% sp_traits$Species)
+survey_sp_abund <- survey_sp_abund %>%
+  select_if(colnames(survey_sp_abund) %in% sp_traits$Species)
 
 survey_sp_occ <- survey_sp_occ %>%
   select_if(colnames(survey_sp_occ) %in% sp_traits$Species) %>%
   as.matrix()
 
-identical(sort(unique(sp_traits$Species)), sort(unique(colnames(survey_sp_biom))))
+identical(sort(unique(sp_traits$Species)), sort(unique(colnames(survey_sp_abund))))
 
-sum(is.na(survey_sp_biom))
+sum(is.na(survey_sp_abund))
 sum(is.na(survey_sp_occ))
 
 # SURVEYS WITH NO OBSERVATIONS?
-survey_sp_biom <- survey_sp_biom[-which(rowSums(survey_sp_biom)==0),]
+survey_sp_abund <- survey_sp_abund[-which(rowSums(survey_sp_abund)==0),]
 survey_sp_occ <- survey_sp_occ[-which(rowSums(survey_sp_occ)==0),]
 
-# LOG TRANSFORM BIOMASS DATA #
-survey_sp_biom <- log10(survey_sp_biom + 1)
+# LOG TRANSFORM ABUNDANCE DATA #
+survey_sp_abund <- log10(survey_sp_abund + 1)
 
-# Relative biomass
-survey_sp_biom_rel <- survey_sp_biom %>%
+# Relative ABUNDANCE
+survey_sp_abund_rel <- survey_sp_abund %>%
   as.matrix() %>%
   make_relative()
 
-table(rowSums(survey_sp_biom_rel))
+table(rowSums(survey_sp_abund_rel))
 
-sum(is.na(survey_sp_biom_rel))
+sum(is.na(survey_sp_abund_rel))
 
 ## Taxonomic diversity
 
 # Species richness and Shannon-like entropy (eq number of species, exp(H'))
 survey_biodiversity <- tibble::tibble(
-  SurveyID = rownames(survey_sp_biom),
+  SurveyID = rownames(survey_sp_abund),
   taxo_richness = apply(survey_sp_occ, 1,  sum),
-  taxo_entropy = apply(survey_sp_biom_rel, 1,
+  taxo_entropy = apply(survey_sp_abund_rel, 1,
                        function(x) {exp((-1) * sum(x[x != 0] * log(x[x != 0])))})
   )
 
@@ -91,8 +94,8 @@ survey_biodiversity <- tibble::tibble(
 # Rearrange trait data
 sp_traits <- sp_traits %>%
   column_to_rownames("Species") %>%
-  mutate(across(c(Diet, Habitat), as.factor)) %>%
-  mutate(across(c(Gregariousness, Water.Column, TrophicLevel, BodySize), ordered))
+  dplyr::mutate(across(c(Diet, Habitat), as.factor)) %>%
+  dplyr::mutate(across(c(Gregariousness, Water.Column, TrophicLevel, BodySize), ordered))
 str(sp_traits)
   
 
@@ -119,7 +122,7 @@ survey_biodiversity <- survey_biodiversity %>%
                                               tau = "mean",
                                               details_returned = FALSE)[, 1],
             # Shannon-like entropy on species relative biomass with q=1
-            fun_entropy = mFD::alpha.fd.hill(asb_sp_w = survey_sp_biom_rel,
+            fun_entropy = mFD::alpha.fd.hill(asb_sp_w = survey_sp_abund_rel,
                                              sp_dist = sp_dist,
                                              q = 1,
                                              tau = "mean",
@@ -131,7 +134,7 @@ survey_biodiversity <- survey_biodiversity %>%
 # Following Chao et al. 2010
 
 multi_tree <- fishtree_complete_phylogeny(
-  species = colnames(survey_sp_biom),
+  species = colnames(survey_sp_abund),
   mc.cores = getOption("mc.cores", 1L)
 )
 
@@ -142,8 +145,8 @@ phylo_occ <- survey_sp_occ %>%
   select_if(colnames(survey_sp_occ) %in% tree$tip.label) %>%
   as.matrix()
 
-phylo_biomass <- survey_sp_biom %>%
-  select_if(colnames(survey_sp_biom) %in% tree$tip.label) %>%
+phylo_abundance <- survey_sp_abund %>%
+  select_if(colnames(survey_sp_abund) %in% tree$tip.label) %>%
   as.matrix() %>%
   make_relative()
 
@@ -153,7 +156,7 @@ survey_biodiversity <- survey_biodiversity %>%
                                                tree = tree,
                                                q = 0),
             # Shannon-like entropy on species relative biomass with q=1
-            phylo_entropy = hillR::hill_phylo(comm = phylo_biomass,
+            phylo_entropy = hillR::hill_phylo(comm = phylo_abundance,
                                               tree = tree,
                                               q = 1)
   )

@@ -125,7 +125,7 @@ map(database = "world",fill = TRUE, border="grey80",
 eco_corners <- par("usr")
 polygon(c(eco_corners[1], eco_corners[1], eco_corners[2], eco_corners[2]),
         c(eco_corners[3], eco_corners[4], eco_corners[4], eco_corners[3]),lwd=1.35)
-title("Ecoregion-Level MPA Effect",line=1,
+title("Predicted Effect of No-Take MPAs by Ecoregion",line=1,
       font.main=1, cex.main=1.25)
 
 

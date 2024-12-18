@@ -167,6 +167,9 @@ for(i in 1:10){
   miss_PC1 <- missForest(PC1_data)$ximp
   PC1_imputation <- cbind(PC1_imputation, miss_PC1$PC1)
 }
+# SAVE ALL 10 RUNS FOR MULTIPLE IMPUTATION ANALYSIS
+PC1_multiple <- data.frame(RLS_PC_scores[,1:4], PC1_imputation)
+saveRDS(PC1_multiple, "outputs/PC1_multiple.rds")
 PC1_imputation <- rowMeans(PC1_imputation)
 
 PC2_imputation <- NULL
@@ -176,6 +179,9 @@ for(i in 1:10){
   miss_PC2 <- missForest(PC2_data)$ximp
   PC2_imputation <- cbind(PC2_imputation, miss_PC2$PC2)
 }
+# SAVE ALL 10 RUNS FOR MULTIPLE IMPUTATION ANALYSIS
+PC2_multiple <- data.frame(RLS_PC_scores[,1:4], PC2_imputation)
+saveRDS(PC2_multiple, "outputs/PC2_multiple.rds")
 PC2_imputation <- rowMeans(PC2_imputation)
 
 PC3_imputation <- NULL
@@ -185,6 +191,9 @@ for(i in 1:10){
   miss_PC3 <- missForest(PC3_data)$ximp
   PC3_imputation <- cbind(PC3_imputation, miss_PC3$PC3)
 }
+# SAVE ALL 10 RUNS FOR MULTIPLE IMPUTATION ANALYSIS
+PC3_multiple <- data.frame(RLS_PC_scores[,1:4], PC3_imputation)
+saveRDS(PC3_multiple, "outputs/PC3_multiple.rds")
 PC3_imputation <- rowMeans(PC3_imputation)
 
 RLS_PC_imputed <- data.frame(selected_survey_info, PC1_imputation, PC2_imputation, PC3_imputation)
@@ -445,175 +454,3 @@ cor.test(RLS_PC_imputed$PC3_imputation, RLS_PCA_using_imputed$x[,3])
 write.table(imputed_benthic_data, "RLS_benthic_data_imputed.txt")
 write.table(RLS_PC_imputed, "RLS_benthic_PCA_imputed.txt")
 
-##################################################################################################
-## AFTER PERFORMING THE ABOVE ANALYSIS, D. MOUILLOT PROVIDED 74 ADDITIONAL TRANSECTS WITH MISSING DATA
-## RE DO THE IMPUTATION WITH EXTRA MISSING DATA ADDED (74 TRANSECTS)  
-##################################################################################################
-
-# ADD THE MISSING TRANSECTS FROM DAVID #
-david_missing <- readRDS("data/sites_missing.RDS")
-david_missing <- david_missing %>%
-  select(SurveyID)
-
-david_missing <- merge(david_missing, RLS_survey_info, by="SurveyID")
-david_missing$Country <- NULL
-david_missing <- david_missing %>%
-  relocate(SurveyID, SiteLongitude, SiteLatitude, SiteCode)
-david_missing$PC1 <- NA
-david_missing$PC2 <- NA
-david_missing$PC3 <- NA
-
-RLS_PC_scores <- rbind(RLS_PC_scores, david_missing)
-
-## FIRST FOR PC SCORES ##
-
-PC1_imputation <- NULL
-for(i in 1:10){
-  PC1_data  <- RLS_PC_scores %>%
-    select("SiteLongitude" , "SiteLatitude", "PC1")
-  miss_PC1 <- missForest(PC1_data)$ximp
-  PC1_imputation <- cbind(PC1_imputation, miss_PC1$PC1)
-}
-PC1_imputation <- rowMeans(PC1_imputation)
-
-PC2_imputation <- NULL
-for(i in 1:10){
-  PC2_data  <- RLS_PC_scores %>%
-    select("SiteLongitude" , "SiteLatitude", "PC2")
-  miss_PC2 <- missForest(PC2_data)$ximp
-  PC2_imputation <- cbind(PC2_imputation, miss_PC2$PC2)
-}
-PC2_imputation <- rowMeans(PC2_imputation)
-
-PC3_imputation <- NULL
-for(i in 1:10){
-  PC3_data  <- RLS_PC_scores %>%
-    select("SiteLongitude" , "SiteLatitude", "PC3")
-  miss_PC3 <- missForest(PC3_data)$ximp
-  PC3_imputation <- cbind(PC3_imputation, miss_PC3$PC3)
-}
-PC3_imputation <- rowMeans(PC3_imputation)
-
-RLS_PC_imputed <- data.frame(RLS_PC_scores[,1:4], PC1_imputation, PC2_imputation, PC3_imputation)
-
-saveRDS(RLS_PC_imputed, "outputs/RLS_benthic_PCA_imputed.rds")
-
-## NOW FOR BENTHIC CATEGORIES INDIVIDUALLY ##
-
-RLStropical_with_NA <- merge(selected_survey_info, RLStropical, by="SurveyID", all=T)
-colnames(RLStropical_with_NA)[5:13]
-
-david_missing <- david_missing %>%
-  select(SurveyID, SiteLongitude, SiteLatitude, SiteCode)
-
-david_missing[,c( "algae", "coral", "coral rubble", "coralline algae", "microalgal_mats", 
-                  "other sessile invert", "Rock", "Sand", "seagrass" )] <- NA
-
-RLStropical_with_NA <- rbind(RLStropical_with_NA, david_missing)
-
-#write.table(RLStropical_with_NA, "RLS_benthic_with_NA.txt")
-
-coral_imputation <- NULL
-for(i in 1:10){
-  coral_data  <- RLStropical_with_NA %>%
-    select("SiteLongitude" , "SiteLatitude", "coral")
-  miss_coral <- missForest(coral_data)$ximp
-  coral_imputation <- cbind(coral_imputation, miss_coral$coral)
-}
-coral_imputation <- rowMeans(coral_imputation)
-min(coral_imputation)
-coral_imputation[coral_imputation<0] <- 0
-
-algae_imputation <- NULL
-for(i in 1:10){
-  algae_data  <- RLStropical_with_NA %>%
-    select("SiteLongitude" , "SiteLatitude", "algae")
-  miss_algae <- missForest(algae_data)$ximp
-  algae_imputation <- cbind(algae_imputation, miss_algae$algae)
-}
-algae_imputation <- rowMeans(algae_imputation)
-min(algae_imputation)
-algae_imputation[algae_imputation<0] <- 0
-
-rubble_imputation <- NULL
-for(i in 1:10){
-  rubble_data  <- RLStropical_with_NA %>%
-    select("SiteLongitude" , "SiteLatitude", "coral rubble")
-  miss_rubble <- missForest(rubble_data)$ximp
-  rubble_imputation <- cbind(rubble_imputation, miss_rubble$`coral rubble`)
-}
-rubble_imputation <- rowMeans(rubble_imputation)
-min(rubble_imputation)
-rubble_imputation[rubble_imputation<0] <- 0
-
-CCA_imputation <- NULL
-for(i in 1:10){
-  CCA_data  <- RLStropical_with_NA %>%
-    select("SiteLongitude" , "SiteLatitude", "coralline algae")
-  miss_CCA <- missForest(CCA_data)$ximp
-  CCA_imputation <- cbind(CCA_imputation, miss_CCA$`coralline algae`)
-}
-CCA_imputation <- rowMeans(CCA_imputation)
-min(CCA_imputation)
-CCA_imputation[CCA_imputation<0] <- 0
-
-micro_mats_imputation <- NULL
-for(i in 1:10){
-  micro_mats_data  <- RLStropical_with_NA %>%
-    select("SiteLongitude" , "SiteLatitude", "microalgal_mats")
-  miss_micro_mats <- missForest(micro_mats_data)$ximp
-  micro_mats_imputation <- cbind(micro_mats_imputation, miss_micro_mats$microalgal_mats)
-}
-micro_mats_imputation <- rowMeans(micro_mats_imputation)
-min(micro_mats_imputation)
-micro_mats_imputation[micro_mats_imputation<0] <- 0
-
-other_inverts_imputation <- NULL
-for(i in 1:10){
-  other_inverts_data  <- RLStropical_with_NA %>%
-    select("SiteLongitude" , "SiteLatitude", "other sessile invert")
-  miss_other_inverts <- missForest(other_inverts_data)$ximp
-  other_inverts_imputation <- cbind(other_inverts_imputation, miss_other_inverts$`other sessile invert`)
-}
-other_inverts_imputation <- rowMeans(other_inverts_imputation)
-min(other_inverts_imputation)
-other_inverts_imputation[other_inverts_imputation<0] <- 0
-
-rock_imputation <- NULL
-for(i in 1:10){
-  rock_data  <- RLStropical_with_NA %>%
-    select("SiteLongitude" , "SiteLatitude", "Rock")
-  miss_rock <- missForest(rock_data)$ximp
-  rock_imputation <- cbind(rock_imputation, miss_rock$Rock)
-}
-rock_imputation <- rowMeans(rock_imputation)
-min(rock_imputation)
-rock_imputation[rock_imputation<0] <- 0
-
-sand_imputation <- NULL
-for(i in 1:10){
-  sand_data  <- RLStropical_with_NA %>%
-    select("SiteLongitude" , "SiteLatitude", "Sand")
-  miss_sand <- missForest(sand_data)$ximp
-  sand_imputation <- cbind(sand_imputation, miss_sand$Sand)
-}
-sand_imputation <- rowMeans(sand_imputation)
-min(sand_imputation)
-sand_imputation[sand_imputation<0] <- 0
-
-seagrass_imputation <- NULL
-for(i in 1:10){
-  seagrass_data  <- RLStropical_with_NA %>%
-    select("SiteLongitude" , "SiteLatitude", "seagrass")
-  miss_seagrass <- missForest(seagrass_data)$ximp
-  seagrass_imputation <- cbind(seagrass_imputation, miss_seagrass$seagrass)
-}
-seagrass_imputation <- rowMeans(seagrass_imputation)
-min(seagrass_imputation)
-seagrass_imputation[seagrass_imputation<0] <- 0
-
-imputed_benthic_data <- data.frame(RLStropical_with_NA[,1:4], coral_imputation, algae_imputation, CCA_imputation,
-                                   rubble_imputation, micro_mats_imputation, rock_imputation, sand_imputation, 
-                                   seagrass_imputation,  other_inverts_imputation)
-
-saveRDS(imputed_benthic_data, "outputs/RLS_benthic_imputed.rds")

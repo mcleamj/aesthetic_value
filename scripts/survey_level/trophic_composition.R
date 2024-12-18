@@ -25,10 +25,11 @@ site_info <- read_rds("data/RLS_sitesInfos_tropical.rds")
 
 sp_ref <- read.table("data/sp_name_ref.txt")
 species_traits <- read.csv("data/species_traits.csv")
-survey_sp_biom <- readr::read_rds("outputs/sp_biomass_matrix.rds")
+#survey_sp_biom <- readr::read_rds("outputs/sp_biomass_matrix.rds")
+survey_sp_abund <- readr::read_rds("outputs/sp_abund_matrix.rds")
 survey_sp_occ <- readr::read_rds("outputs/sp_pres_matrix.rds")
 
-survey_sp_biom <- survey_sp_biom %>%
+survey_sp_abund <- survey_sp_abund %>%
   column_to_rownames("SurveyID") 
 
 survey_sp_occ <- survey_sp_occ %>%
@@ -42,26 +43,26 @@ species_traits <- FindReplace(species_traits, "Species", sp_ref, from="SPECIES_N
 
 species_traits <- species_traits %>%
   distinct(Species, .keep_all = TRUE) %>%
-  filter(Species %in% colnames(survey_sp_biom))
+  filter(Species %in% colnames(survey_sp_abund))
 
-survey_sp_biom <- survey_sp_biom %>%
-  select_if(colnames(survey_sp_biom) %in% species_traits$Species)
+survey_sp_abund <- survey_sp_abund %>%
+  select_if(colnames(survey_sp_abund) %in% species_traits$Species)
 
 survey_sp_occ <- survey_sp_occ %>%
   select_if(colnames(survey_sp_occ) %in% species_traits$Species) %>%
   as.matrix()
 
-identical(sort(unique(species_traits$Species)), sort(unique(colnames(survey_sp_biom))))
+identical(sort(unique(species_traits$Species)), sort(unique(colnames(survey_sp_abund))))
 
-sum(is.na(survey_sp_biom))
+sum(is.na(survey_sp_abund))
 sum(is.na(survey_sp_occ))
 
 # SURVEYS WITH NO OBSERVATIONS?
-survey_sp_biom <- survey_sp_biom[-which(rowSums(survey_sp_biom)==0),]
+survey_sp_abund <- survey_sp_abund[-which(rowSums(survey_sp_abund)==0),]
 survey_sp_occ <- survey_sp_occ[-which(rowSums(survey_sp_occ)==0),]
 
-# LOG TRANSFORM BIOMASS DATA #
-survey_sp_biom <- log10(survey_sp_biom + 1)
+# LOG TRANSFORM ABUNDANCE DATA #
+survey_sp_abund <- log10(survey_sp_abund + 1)
 
 # CWM TRAITS USING OCCURENENCE DATA
 species_traits <- species_traits %>%
@@ -78,8 +79,13 @@ species_traits <- species_traits %>%
 sapply(species_traits, function(x) paste(round(sum(is.na(x))/length(x),2)*100,"%",sep=""))
 str(species_traits)
 
-cwm_traits_cont <- functcomp(as.matrix(select(species_traits, c(BodySize, Trophic.Level))), as.matrix(survey_sp_occ))
-cwm_traits_cat <-  functcomp(as.matrix(select(species_traits, Diet)), as.matrix(survey_sp_occ),CWM.type = "all")
+##############################################################
+# SPECIFY WHETHER TO USE OCCURENCE OR ABUNDANCE DATA BELOW
+# UPDATED IN THE MANUSCRIPT - ALL METRICS NOW WITH ABUNDANCE
+##############################################################
+
+cwm_traits_cont <- functcomp(as.matrix(select(species_traits, c(BodySize, Trophic.Level))), as.matrix(survey_sp_abund))
+cwm_traits_cat <-  functcomp(as.matrix(select(species_traits, Diet)), as.matrix(survey_sp_abund),CWM.type = "all")
 
 # NEED TO TRANSFORM THE CATEGORICAL TRAITS
 cwm_traits_cat <- asin(sqrt(cwm_traits_cat))

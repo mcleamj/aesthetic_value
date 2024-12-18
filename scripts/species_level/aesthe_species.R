@@ -20,6 +20,19 @@
   
   aesthe_species$sp_name <- as.character(gsub("_"," ",aesthe_species$sp_name))
   aesthe_species$aesthe_score <- as.numeric(aesthe_species$aesthe_score)
+  
+  ## ARE THERE ANY DUPLICATES NOW?
+  aesthe_species$sp_name[which(duplicated(aesthe_species$sp_name))]
+  
+  # THIS MEANS THE ORIGINAL DATA CONTAINED BOTH THE OLD AND NEW NAMES
+  # FOR THESE 2 SPECIES
+  # WE KEEP THE VERSION WITH THE HIGHER AESTHETIC SCORE 
+  # AND DELETE THE DUPLICATE
+  
+  aesthe_species <- aesthe_species %>%
+    group_by(sp_name) %>%
+    slice_max(aesthe_score, with_ties = FALSE) %>%
+    ungroup()
 
 # Compute the aesthe contribution of each species
   # with parameters from Tribot, A.S, Deter, J., Claverie, T., Guillhaumon, F., Villeger, S., & Mouquet, N. (2019). Species diversity and composition drive the aesthetic value of coral reef fish assemblages. Biology letters, 15, 20190703, doi:10.1098/rsbl.2019.0703

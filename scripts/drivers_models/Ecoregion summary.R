@@ -4,7 +4,9 @@ library(dplyr)
 
 survey_esth <- read.csv("outputs/survey_aesth.csv")
 
-survey_esth$residual <- survey_esth$aesthe_survey - survey_esth$aesthe_SR_survey
+survey_esth$residual_abund <- survey_esth$aesthe_survey_abund - survey_esth$aesthe_SR_survey
+
+survey_esth$residual_pres <- survey_esth$aesthe_survey_pres - survey_esth$aesthe_SR_survey
 
 model_data <- readRDS("data/model_data.rds")
 
@@ -25,6 +27,9 @@ eco_mean <- survey_esth %>%
 
 eco_mean
 
-cor.test(eco_mean$aesthe_survey, eco_mean$residual)
+plot(eco_mean$aesthe_survey_abund ~ eco_mean$nb_species)
+points(eco_mean$nb_species, eco_mean$aesthe_SR_survey,col=2)
+
+cor.test(eco_mean$aesthe_survey_abund, eco_mean$residual_abund)
 
 

@@ -47,7 +47,7 @@ options(mc.cores = parallel::detectCores())
 ## VARYING SLOPE MODEL ##
 #########################
 
-ecoregion_model_formula  <- bf(log(aesthe_survey) ~ MPA + # TEST VARIABLE
+ecoregion_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA + # TEST VARIABLE
                            HDI2017 + # CONTROL VARIABLE
                            fshD + # CONTROL VARIABLE
                            gravtot2 + # CONTROL VARIABLE
@@ -68,7 +68,7 @@ ecoregion_model <- read_rds("outputs/BIG_FILES/ecoregion_varying_slopes_model.rd
 
 eco_model_post <- as.data.frame(as.matrix(ecoregion_model)) %>%
   #select('b_MPANotake','b_MPARestrictedtake')
-  select('b_MPANotake':'b_gravtot2')
+  dplyr::select('b_MPANotake':'b_gravtot2')
 
 mcmc_intervals(eco_model_post) # QUICK LOOK AT MODEL OUTPUT
 
@@ -87,3 +87,15 @@ eco_no_take$ECOREGION <- rownames(eco_no_take)
 # HISTOGRAM OF EFFECT SIZES
 hist(eco_no_take$Slope)
 abline(v=0, lty=2, lwd=2)
+
+##############################
+## CALCULATE PROJECTED GAIN ##
+##############################
+
+gain <- data.frame(Ecoregion = eco_intercept$ECOREGION,
+                   fished = exp(eco_intercept$Intercept), 
+                   no_take = exp(eco_no_take$Slope + eco_intercept$Intercept))
+gain$diff <- gain$no_take - gain$fished
+gain$perc_diff <- ((gain$no_take - gain$fished) / gain$fished)*100
+
+mean(gain$perc_diff[gain$perc_diff>0])
