@@ -22,6 +22,7 @@ if(!require(brms)){install.packages("brms"); library(brms)}
 if(!require(bayesplot)){install.packages("bayesplot"); library(bayesplot)}
 if(!require(parallel)){install.packages("parallel"); library(parallel)}
 if(!require(rstan)){install.packages("rstan"); library(rstan)}
+if(!require(cmdstanr)){install.packages("cmdstanr"); library(cmdstanr)}
 if(!require(bayestestR)){install.packages("bayestestR"); library(bayestestR)}
 if(!require(performance)){install.packages("performance"); library(performance)}
 if(!require(readr)){install.packages("readr"); library(readr)}
@@ -49,9 +50,9 @@ options(mc.cores = parallel::detectCores())
 
 ecoregion_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA + # TEST VARIABLE
                            HDI2017 + # CONTROL VARIABLE
-                           fshD + # CONTROL VARIABLE
                            gravtot2 + # CONTROL VARIABLE
                            as.factor(Temperature_Zone) + # CONTROL VARIABLE
+                            # s(SiteLongitude, SiteLatitude, bs = "gp") + # SPATIAL GUASSIAN PROCESS
                            (1 | Country/SiteCode) + # RANDOM INTERCEPTS FOR SITES
                            (1 + MPA | Ecoregion), # RANDOM INTERCEPT AND SLOPE FOR ECOREGION
                          
@@ -60,6 +61,8 @@ ecoregion_model_formula  <- bf(log(aesthe_survey_abund) ~ MPA + # TEST VARIABLE
 ecoregion_model <- brm(ecoregion_model_formula,
                  data=standardized_data,
                  chains=4, iter=4000, cores=ncores,
+                 backend = "cmdstanr",
+                 #control = list(max_treedepth = 15),
                  c(set_prior("normal(0,3)", class = "b"),
                    set_prior("normal(0,3)", class="Intercept")))
 
@@ -75,10 +78,6 @@ mcmc_intervals(eco_model_post) # QUICK LOOK AT MODEL OUTPUT
 ################################
 ## EXTRACT MODEL COEFFICIENTS ##
 ################################
-
-eco_intercept <- as.data.frame(coef(ecoregion_model)$Ecoregion[,,"Intercept"]) %>%
-  rename(Intercept = "Estimate")
-eco_intercept$ECOREGION <- rownames(eco_intercept)
 
 eco_no_take <- as.data.frame(coef(ecoregion_model)$Ecoregion[,,"MPANotake"]) %>%
   rename(Slope = "Estimate")

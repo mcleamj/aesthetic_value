@@ -27,13 +27,13 @@ site_info <- readRDS("data/RLS_sitesInfos_tropical.rds")
 ## CALCULATE RESIDUAL (DEVIATION FROM EXPECTED) ##
 ##################################################
 
-survey_esth$residual <- survey_esth$aesthe_survey - survey_esth$aesthe_SR_survey
+survey_esth$residual <- survey_esth$aesthe_survey_abund - survey_esth$aesthe_SR_survey
 
 ###################
 ## PLOT THE DATA ##
 ###################
 
-scatter2D(survey_esth$nb_species, survey_esth$aesthe_survey,
+scatter2D(survey_esth$nb_species, survey_esth$aesthe_survey_abund,
           pch=19, cex=1, colvar = survey_esth$residual,
           xlab="Species Richness", ylab="Observed Aesthetic Value")
 points(survey_esth$nb_species, survey_esth$aesthe_SR_survey, pch=19, col=1)
@@ -56,14 +56,22 @@ site_esth <- survey_esth %>%
 ## CALCULATE LOG OF AESTHETIC VALUE FOR EACH SITE ##
 ####################################################
 
-site_esth$log_esth <- log(site_esth$aesthe_survey)
+site_esth$log_esth <- log(site_esth$aesthe_survey_abund)
 
-##############################################################################################
-## CALCULATE INVERSE DISTANCE WEIGHTING INTERPOLATION FOR LOG AESTHETIC VALUE AND RESIDUALS ##
-##############################################################################################
+##########################################
+## IMPORT AND ATTACH MODELED INTERCEPTS ##
+##########################################
+
+site_intercepts <- readRDS("outputs/site_intercepts.rds")
+
+site_esth <- merge(site_esth, site_intercepts, by="SiteCode")
+
+########################################################
+## CALCULATE INVERSE DISTANCE WEIGHTING INTERPOLATION ##
+########################################################
 
 IDW_sites <- site_esth %>%
-  select(SiteLongitude, SiteLatitude, log_esth, residual)
+  select(SiteLongitude, SiteLatitude, log_esth, Estimate.Intercept, residual)
 
 sites_xy <- cbind(IDW_sites$SiteLongitude, IDW_sites$SiteLatitude)
 
@@ -125,6 +133,43 @@ log_esth_IDW$lon_2 <- ifelse(log_esth_IDW$lon <0, log_esth_IDW$lon+360, log_esth
 
 ## SAVE OUTPUT
 saveRDS(log_esth_IDW, "outputs/log_esth_IDW.rds")
+
+
+
+#######################
+## MODELED INTERCEPT ##
+#######################
+
+#pull values of interest
+values_intercept <- IDW_sites %>% 
+  pull(Estimate.Intercept)
+
+#weights each grid cell value by it's distance from the site according to the power you assign. 
+w <- 1/(xydist^p) 
+
+indic <- matrix(values_intercept, nrow = 1)
+isreal <- which(!is.na(indic))
+nvals <- length(isreal)
+
+val <- (indic[isreal] %*% w[isreal,])/colSums(w[isreal,])
+val <- as.numeric(val)
+
+rval <- r
+rval[ifilter] <- as.numeric(val)
+esth_rast <- rval 
+
+## CREATE DATA FRAME
+intercept_IDW <- data.frame(xyinterp, val)
+names(intercept_IDW) <- c("lon", "lat", "Estimate.Intercept")
+
+intercept_IDW <- intercept_IDW %>%
+  arrange(Estimate.Intercept)
+
+intercept_IDW$lon_2 <- ifelse(intercept_IDW$lon <0, intercept_IDW$lon+360, intercept_IDW$lon)
+
+## SAVE OUTPUT
+saveRDS(intercept_IDW, "outputs/intercept_IDW.rds")
+
 
 ####################
 ## RESIDUAL VALUE ##

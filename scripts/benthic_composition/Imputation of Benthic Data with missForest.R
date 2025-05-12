@@ -115,7 +115,18 @@ RLStropical_arc <- asin(sqrt(RLStropical))
 RLStropical_PCA <- prcomp(RLStropical_arc,scale = F) # Run PCA with no scaling 
 fviz_pca_var(RLStropical_PCA, col.var = "contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE)
+             repel = FALSE)
+
+ggsave(file=here::here("figures_tables/revised_submission/supplementary_figures",
+                       "benthic_PCA.png"), 
+       device = 'png',
+       dpi = 300, 
+       units = 'in', 
+       width = 8, 
+       height = 6, 
+       bg = 'white')
+
+fviz_eig(RLStropical_PCA)
 
 
 ############################################################
@@ -151,7 +162,7 @@ dev.off()
 ## FIRST - IMPUTE THE MISSING PCA SCORES ##
 ###########################################
 
-RLS_PC_scores <- data.frame(RLStropical_PCA$x[,1:3]) # AXES 1-3
+RLS_PC_scores <- data.frame(RLStropical_PCA$x[,1:4]) # AXES 1-3
 RLS_PC_scores$SurveyID <- rownames(RLS_PC_scores)
 RLS_PC_scores <- merge(selected_survey_info, RLS_PC_scores, all=T)
 #write.table(RLS_PC_scores, "RLS_PCA_with_NA.txt")
@@ -196,7 +207,19 @@ PC3_multiple <- data.frame(RLS_PC_scores[,1:4], PC3_imputation)
 saveRDS(PC3_multiple, "outputs/PC3_multiple.rds")
 PC3_imputation <- rowMeans(PC3_imputation)
 
-RLS_PC_imputed <- data.frame(selected_survey_info, PC1_imputation, PC2_imputation, PC3_imputation)
+PC4_imputation <- NULL
+for(i in 1:10){
+  PC4_data  <- RLS_PC_scores %>%
+    select("SiteLongitude" , "SiteLatitude", "PC4")
+  miss_PC4 <- missForest(PC4_data)$ximp
+  PC4_imputation <- cbind(PC4_imputation, miss_PC4$PC4)
+}
+# SAVE ALL 10 RUNS FOR MULTIPLE IMPUTATION ANALYSIS
+PC4_multiple <- data.frame(RLS_PC_scores[,1:4], PC4_imputation)
+saveRDS(PC4_multiple, "outputs/PC4_multiple.rds")
+PC4_imputation <- rowMeans(PC4_imputation)
+
+RLS_PC_imputed <- data.frame(selected_survey_info, PC1_imputation, PC2_imputation, PC3_imputation, PC4_imputation)
 
 
 # TEST ACCURACY WITH 35% OF DATA DELETED ##
@@ -451,6 +474,6 @@ cor.test(RLS_PC_imputed$PC3_imputation, RLS_PCA_using_imputed$x[,3])
 
 ## SAVE THE OUTPUTS ##
 
-write.table(imputed_benthic_data, "RLS_benthic_data_imputed.txt")
-write.table(RLS_PC_imputed, "RLS_benthic_PCA_imputed.txt")
+saveRDS(imputed_benthic_data, "outputs/RLS_benthic_data_imputed.rds")
+saveRDS(RLS_PC_imputed, "outputs/RLS_benthic_PCA_imputed.rds")
 

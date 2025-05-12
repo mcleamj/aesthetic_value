@@ -14,15 +14,12 @@ MPA_coefs$variable <- rownames(MPA_coefs)
 
 MPA_coefs <- MPA_coefs %>%
   mutate(variable=recode(variable, 
-                     "tax_richness" = "Taxonomic Richness",
-                     "phylo_richness" = "Phylogenetic Richness",
-                     "Taxo_PC2" = "Taxonomic Composition (PC2)",
-                     "Taxo_PC1" = "Taxonomic Composition (PC1)",
-                     "fun_richness" = "Functional Richness",
-                     "PC2_Benthic" = "Benthic Composition (PC2)",
-                     "PC1_Benthic" = "Benthic Composition (PC1)",
-                     "PC1_Trophic" = "Trophic Composition (PC1)",
-                     "PC2_Trophic" = "Trophic Composition (PC2)",
+                     "tax_entropy" = "Taxonomic Diversity",
+                     "phylo_entropy" = "Phylogenetic Diversity",
+                     "Taxonomic_Composition" = "Taxonomic Composition",
+                     "fun_entropy" = "Functional Diversity",
+                     "Benthic_Composition" = "Benthic Composition",
+                     "Trophic_Composition" = "Trophic Composition",
                      "MPA.Total.Causal.Effect"="MPA Total Causal Effect"))
 
 MPA_coefs$abs_effect <- abs(MPA_coefs$Estimate)
@@ -37,12 +34,15 @@ MPA_coefs$color <- ifelse(MPA_coefs$sign=="pos","blue","red")
 MPA_coefs$color_alpha <- NA
 
 for(i in 1:nrow(MPA_coefs)){
-  MPA_coefs$color_alpha[i] <- adjustcolor(MPA_coefs$color[i], alpha.f = abs(MPA_coefs$Estimate[i])*100)
+  MPA_coefs$color_alpha[i] <- adjustcolor(MPA_coefs$color[i], 
+                                          alpha.f = abs(MPA_coefs$Estimate[i])*50)
 }
 
 MPA_coefs$size <- rep(2)
 
 MPA_coefs$color[MPA_coefs$variable=="MPA Total Causal Effect"] <- "black"
+MPA_coefs$color_alpha[MPA_coefs$variable=="MPA Total Causal Effect"] <- 
+  adjustcolor('black', alpha.f = 1)
 
 MPA_coefs$size[MPA_coefs$variable=="MPA Total Causal Effect"] <- 2.5
 
@@ -53,14 +53,14 @@ MPA_coefs$size[MPA_coefs$variable=="MPA Total Causal Effect"] <- 2.5
 
 graphics.off()
 
-par(mar=c(4,16,4,4))
+par(mar=c(4,16,2,4))
 
 plot(MPA_coefs$Estimate, seq(1:nrow(MPA_coefs)), xlim=c(min(MPA_coefs$Q5,na.rm = TRUE),max(MPA_coefs$Q95,na.rm = TRUE)),
      ylim=c(min(seq(1:nrow(MPA_coefs))-0.25),max(seq(1:nrow(MPA_coefs))+0.25)),cex=0,
      xlab="Standardized Effect Size", ylab=NA, yaxt = "n",
      cex.lab=1.25)
 title("Contributions to MPA Effect", line=1,
-      font.main=1, cex.main=1.5)
+      font.main=1, cex.main=1.2)
 
 corners <- par("usr")
 
@@ -86,7 +86,7 @@ abline(h=h_line, col=adjustcolor("black",alpha.f = 0.75), lty=1)
 
 axis(2, at = seq(1:nrow(MPA_coefs)), 
      labels = MPA_coefs$variable,
-     las=2, cex.axis=1.25)
+     las=2, cex.axis=1)
 
 abline(h=nrow(MPA_coefs)-0.5, lty=1, lwd=1)
 

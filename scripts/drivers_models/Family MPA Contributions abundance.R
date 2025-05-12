@@ -118,7 +118,7 @@ dom_families <- family_dom %>%
 ## AT THE SITE LEVEL FOR MPA MODELS
 
 MPA_standardized_data <- family_model_data %>%
-  select(SiteCode, Country, Ecoregion, MPA)
+  select(SiteCode, SiteLongitude, SiteLatitude, Country, Ecoregion, MPA)
 
 MPA_standardized_data <- MPA_standardized_data[!duplicated(MPA_standardized_data$SiteCode),]  
 
@@ -151,13 +151,15 @@ colnames(abundance_fit_list) <- family_dom$family
 start_time <- Sys.time()
 
 for(i in 1:nrow(family_dom)){
-  sub_model <- brm(formula=brmsformula(paste("log10(",family_dom$family[i],"+1)", "~ MPA + (1 | Ecoregion)")),
+  sub_model <- brm(formula=brmsformula(paste("log10(",family_dom$family[i],"+1)", 
+  "~ MPA + s(SiteLongitude, SiteLatitude) + (1 | Ecoregion)")),
                    family=gaussian(),
                    data=abundance_standardized_data,
                    chains=4,
                    cores=ncores, 
-                   iter=4000)
-  #control = list(adapt_delta=0.95))
+                   iter=4000,
+                   control = list(max_treedepth = 12))
+  
   sub_posterior <- as.data.frame(as.matrix(sub_model)) %>%
     select(b_Intercept, b_MPANotake)
   
@@ -170,6 +172,5 @@ end_time - start_time
 
 mcmc_intervals(abundance_fit_list)
 
-saveRDS(abundance_fit_list,"outputs/abundance_fit_list.rds")
-abundance_fit_list <- read_rds("outputs/abundance_fit_list.rds")
+saveRDS(abundance_fit_list,"outputs/abundance_fit_list_spatial.rds")
 

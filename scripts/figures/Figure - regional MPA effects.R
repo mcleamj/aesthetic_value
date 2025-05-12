@@ -20,6 +20,8 @@ if(!require(pals)){install.packages("pals"); library(pals)}
 if(!require(readr)){install.packages("readr"); library(readr)}
 if(!require(dplyr)){install.packages("dplyr"); library(dplyr)}
 
+source("R/variablecol.R")
+
 #######################
 ## IMPORT MODEL DATA ##
 #######################
@@ -35,10 +37,6 @@ ecoregion_model <- read_rds("outputs/BIG_FILES/ecoregion_varying_slopes_model.rd
 ################################
 ## EXTRACT MODEL COEFFICIENTS ##
 ################################
-
-eco_intercept <- as.data.frame(coef(ecoregion_model)$Ecoregion[,,"Intercept"]) %>%
-  rename(Intercept = "Estimate")
-eco_intercept$ECOREGION <- rownames(eco_intercept)
 
 eco_no_take <- as.data.frame(coef(ecoregion_model)$Ecoregion[,,"MPANotake"]) %>%
   rename(Slope = "Estimate")
@@ -69,6 +67,16 @@ regions$color <- variablecol(regions$Slope, col=(jet(nrow(regions))),
                              clim=col_range)
 
 
+###############################
+## SAVE THE FILE AS A FIGURE ##
+###############################
+
+# graphics.off()
+# tiff(file=here::here("figures_tables","MPA_Ecoregions.tiff"),
+#      width = 12,
+#      height =4.5,
+#      units="in",
+#      res = 300)
 
 ####################################
 ## MAKE FIGURE OF MAP AND EFFECTS ##
@@ -76,7 +84,6 @@ regions$color <- variablecol(regions$Slope, col=(jet(nrow(regions))),
 
 ## FIGURE LAYOUT ##
 
-graphics.off()
 par(oma=c(0,0,0,0))
 par(mar=c(4,4,4,4))
 
@@ -90,10 +97,10 @@ m2 <- matrix(c(1,1,1,1,1,1,1,1,1,2,2,
              ncol= 11,
              byrow = TRUE)
 
-layout(m2, widths = c(1,1,1,1,1,1,1,1,1,1,1),
+layout(m2, widths = c(1,1,1,1,1,1,1,1,1,1.1,1.1),
        heights = c(1,1,1,1,1,1))
 
-layout.show(n=2)
+#layout.show(n=2)
 
 
 #################
@@ -132,12 +139,14 @@ title("Predicted Effect of No-Take MPAs by Ecoregion",line=1,
 # LATITUDE PLOT PANEL #
 
 scatter2D(regions$Slope, regions$SiteLatitude, pch=19,
-          xlab="Effect Size", ylab="Latitude",
+          xlab="Effect Size", ylab=NA, yaxt="n",
           colvar = regions$Slope, clim=col_range,
           col=rev(brewer.rdylbu(nrow(regions))),
           cex=0,
           colkey = FALSE)
 
 points(regions$Slope, regions$SiteLatitude, pch=21,
-       cex=2, col="black", bg=regions$color,
-       xlab="Effect Size", ylab="Latitude")
+       cex=1.75, col="black", bg=regions$color,
+       xlab="Effect Size", ylab=NA)
+
+#dev.off() 

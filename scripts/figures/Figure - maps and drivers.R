@@ -94,13 +94,26 @@ env_color <- adjustcolor("grey80", alpha.f = 1)
 # anthro_color <- adjustcolor("blue",alpha.f = 0.5)
 # env_color <- adjustcolor("green", alpha.f = 0.5)
 
+
+###############################
+## SAVE THE FILE AS A FIGURE ##
+###############################
+
+# graphics.off()
+# tiff(file=here::here("figures_tables","TEST_TEST.tiff"), 
+#      # width = 10*3.5, 
+#      # height = 6*3.5,
+#      width = 17.8,
+#      height= 10.7,
+#      units="cm",
+#      res = 600)
+
 ##################################
 ## MAKE THE FIGURE USING BASE R ##
 ##################################
 
 ## FIGURE LAYOUT ##
 
-graphics.off()
 par(oma=c(0,0,0,0))
 par(mar=c(4,4,4,4))
 
@@ -125,6 +138,7 @@ layout(m2, widths = c(1,1,1,1,1,1,1,1,1,0.5,1,1,1),
 
 layout.show(n=4)
 
+
 ##################################
 ## PLOT THE AESTHETIC VALUE MAP ##
 ##################################
@@ -140,8 +154,8 @@ scatter2D(log_esth_IDW$lon, log_esth_IDW$lat, pch=19,
           colvar = log_esth_IDW$log_esth, cex=0.75,
           col=(jet(n=nrow(log_esth_IDW))),
           add=TRUE)
-mtext(side=4, line=1, text="log(Aesthetic Value)")
-mtext(side=3, adj=-0.05, text="a)", line=1.5, font=2, cex=1.25)
+mtext(side=4, line=1.5, text="log(Aesthetic Value)")
+mtext(side=3, adj=-0.05, text="A", line=1.5, font=2, cex=1.25)
 
 map(database = "world", fill=T, col="grey80", border="grey80",add=T)
 #map(database = "world", fill=T, col="grey70", border="grey70",add=T)
@@ -163,6 +177,8 @@ title("Drivers of Aesthetic Value", line=1,
 
 corners <- par("usr")
 
+abline(v=0, lwd=1.5, col=adjustcolor("black",alpha.f = 0.75), lty=2)
+
 par(lend=1)
 x0 <- aes_coefs$Q5
 x1 <- aes_coefs$Q95
@@ -174,13 +190,12 @@ x1 <- aes_coefs$Q75
 y0 <- seq(1:nrow(aes_coefs))
 y1 <- seq(1:nrow(aes_coefs))
 segments(x0,y0,x1,y1, lwd=5)
-points(aes_coefs$Estimate, seq(1:nrow(aes_coefs)),col="white",bg="white",cex=2,
+points(aes_coefs$Estimate, seq(1:nrow(aes_coefs)),col="white",bg="white",cex=1.75,
        pch=ifelse(aes_coefs$type=="Anthropogenic",21,21))
-points(aes_coefs$Estimate, seq(1:nrow(aes_coefs)),col=1,cex=2,
+points(aes_coefs$Estimate, seq(1:nrow(aes_coefs)),col=1,cex=1.75,
        pch=ifelse(aes_coefs$type=="Anthropogenic",21,21),
        bg=ifelse(aes_coefs$type=="Anthropogenic",anthro_color,env_color))
 
-abline(v=0, lwd=1.5, col=adjustcolor("black",alpha.f = 0.75), lty=2)
 h_line <- which(aes_coefs$type=="Environmental")[1]-0.5
 abline(h=h_line, col=adjustcolor("black",alpha.f = 0.75), lty=1)
 
@@ -194,7 +209,7 @@ axis(2, at = seq(1:nrow(aes_coefs)),
 #mtext(side=4, adj=0, text="Anthropogenic", line=1, font=1, cex=1)
 #mtext(side=4, adj=0.75, text="Environmental", line=1, font=1, cex=1)
 
-mtext(side=3, adj=-0.25, text="b)", line=1.5, font=2, cex=1.25)
+mtext(side=3, adj=-0.25, text="B", line=1.5, font=2, cex=1.25)
 
 legend("bottomright", legend=c("Environmental","Anthropogenic"),
        bty="n",bg=NA, cex=1, pch=19, col=c(env_color,anthro_color))
@@ -218,8 +233,8 @@ scatter2D(residual_IDW$lon, residual_IDW$lat, pch=19,
           col=(jet(n=nrow(residual_IDW))),
           clim=resid_clim,
           add=TRUE)
-mtext(side=4, line=1, text="Residual Value")
-mtext(side=3, adj=-0.05, text="c)", line=1.5, font=2, cex=1.25)
+mtext(side=4, line=1.5, text="Residual Value")
+mtext(side=3, adj=-0.05, text="C", line=1.5, font=2, cex=1.25)
 
 map(database = "world", fill=T, col="grey80", border="grey80",add=T)
 #map(database = "world", fill=T, col="grey70", border="grey70",add=T)
@@ -243,6 +258,8 @@ title("Drivers of Deviation Value", line=1,
 
 corners <- par("usr")
 
+abline(v=0, lwd=1.5, col=adjustcolor("black",alpha.f = 0.75), lty=2)
+
 par(lend=1)
 x0 <- deviation_coefs$Q5
 x1 <- deviation_coefs$Q95
@@ -254,11 +271,10 @@ x1 <- deviation_coefs$Q75
 y0 <- seq(1:nrow(deviation_coefs))
 y1 <- seq(1:nrow(deviation_coefs))
 segments(x0,y0,x1,y1, lwd=5)
-points(deviation_coefs$Estimate, seq(1:nrow(deviation_coefs)),pch=21,col="white",bg="white",cex=2)
-points(deviation_coefs$Estimate, seq(1:nrow(deviation_coefs)),pch=21,col=1,cex=2,
+points(deviation_coefs$Estimate, seq(1:nrow(deviation_coefs)),pch=21,col="white",bg="white",cex=1.75)
+points(deviation_coefs$Estimate, seq(1:nrow(deviation_coefs)),pch=21,col=1,cex=1.75,
        bg=ifelse(deviation_coefs$type=="Anthropogenic",anthro_color,env_color))
 
-abline(v=0, lwd=1.5, col=adjustcolor("black",alpha.f = 0.75), lty=2)
 h_line <- which(aes_coefs$type=="Environmental")[1]-0.5
 abline(h=h_line, col=adjustcolor("black",alpha.f = 0.75), lty=1)
 
@@ -272,10 +288,11 @@ axis(2, at = seq(1:nrow(deviation_coefs)),
 #mtext(side=4, adj=0, text="Anthropogenic", line=1, font=1, cex=1)
 #mtext(side=4, adj=0.75, text="Environmental", line=1, font=1, cex=1)
 
-mtext(side=3, adj=-0.25, text="d)", line=1.5, font=2, cex=1.25)
+mtext(side=3, adj=-0.25, text="D", line=1.5, font=2, cex=1.25)
 
 legend("bottomright", legend=c("Environmental","Anthropogenic"),
        bty="n",bg=NA, cex=1, pch=19, col=c(env_color,anthro_color))
 
+#dev.off() 
 
 

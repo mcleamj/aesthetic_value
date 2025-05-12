@@ -6,6 +6,7 @@ library(parallel)
 library(rstan)
 library(ggplot2)
 library(ggridges)
+library(gridExtra)
 library(dplyr)
 
 ###################################################
@@ -121,6 +122,7 @@ for( i in 1:10){
 }
 
 saveRDS(PC1_posteriors, "outputs/PC1_posteriors.rds")
+PC1_posteriors <- readRDS("outputs/PC1_posteriors.rds")
 
 ## RIDGE PLOT THE POSTERIORS FROM EACH ITERATION
 
@@ -146,21 +148,21 @@ original_posterior <- as.data.frame(as.matrix(original_model))  %>%
 combined_data <- data.frame(values=c(PC1_posteriors$b_PC1_imputed, original_posterior$b_PC1_imputed))
 combined_data$identity <- c(rep("multiple", nrow(PC1_posteriors)), rep("original", nrow(original_posterior)))
 
-ggplot(combined_data, aes(x = values, y = factor(identity), fill = factor(identity))) +
+PC1_plot <- ggplot(combined_data, aes(x = values, y = factor(identity), fill = factor(identity))) +
   geom_density_ridges(alpha = 0.5, scale = 1.5) +  # alpha controls transparency
   scale_fill_viridis_d(option = "C") +  # Use a color scale with good contrast
-  theme_ridges() +  # Nice theme for ridgeline plots
-  labs(x = "Values", y = "Identity", title = "Posterior Distributions") +
+  theme_classic() +
+  theme(
+    axis.text.y = element_text(size = 12), # Style predictor labels
+    axis.text.x = element_text(size = 12)) +
+  labs(x = NULL, y = NULL, title = "Benthic PC1 Posterior Distributions") +
   theme(legend.position = "none")  # Optionally remove the legend
 
-
-
-
+PC1_plot
 
 ###########################################################
 ## RUN A GIANT LOOP TO RUN 10 MODELS AND SAVE THE OUTPUT ##
 ###########################################################
-
 
 PC2_posteriors <- NULL
 
@@ -207,6 +209,7 @@ for( i in 1:10){
 }
 
 saveRDS(PC2_posteriors, "outputs/PC2_posteriors.rds")
+PC2_posteriors <- readRDS("outputs/PC2_posteriors.rds")
 
 ## RIDGE PLOT THE POSTERIORS FROM EACH ITERATION
 
@@ -232,10 +235,28 @@ original_posterior <- as.data.frame(as.matrix(original_model))  %>%
 combined_data <- data.frame(values=c(PC2_posteriors$b_PC2_imputed, original_posterior$b_PC2_imputed))
 combined_data$identity <- c(rep("multiple", nrow(PC2_posteriors)), rep("original", nrow(original_posterior)))
 
-ggplot(combined_data, aes(x = values, y = factor(identity), fill = factor(identity))) +
+PC2_plot <- ggplot(combined_data, aes(x = values, y = factor(identity), fill = factor(identity))) +
   geom_density_ridges(alpha = 0.5, scale = 1.5) +  # alpha controls transparency
   scale_fill_viridis_d(option = "C") +  # Use a color scale with good contrast
-  theme_ridges() +  # Nice theme for ridgeline plots
-  labs(x = "Values", y = "Identity", title = "Posterior Distributions") +
+  theme_classic() +
+  theme(
+    axis.text.y = element_text(size = 12), # Style predictor labels
+    axis.text.x = element_text(size = 12)) +
+  labs(x = NULL, y = NULL, title = "Benthic PC2 Posterior Distributions") +
   theme(legend.position = "none")  # Optionally remove the legend
+
+PC2_plot
+
+posterior_figure <- gridExtra::arrangeGrob(PC1_plot,PC2_plot,ncol=2)
+posterior_figure
+
+ggsave(file=here::here("figures_tables/revised_submission/supplementary_figures",
+                       "multiple_imputation_test.png"), 
+       posterior_figure,
+       device = 'png',
+       dpi = 300, 
+       units = 'in', 
+       width = 8, 
+       height = 6, 
+       bg = 'white')
 

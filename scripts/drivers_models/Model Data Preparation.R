@@ -40,18 +40,17 @@ model_data <- merge(model_data, biodiv, by="SurveyID")
 
 benthic_PCA <- read_rds("outputs/RLS_benthic_PCA_imputed.rds")
 benthic_PCA <- benthic_PCA %>%
-  select(SurveyID, PC1_imputation, PC2_imputation) %>%
-  dplyr::rename(PC1_imputed = PC1_imputation, PC2_imputed = PC2_imputation)
+  select(SurveyID, PC1_imputation, PC2_imputation,
+         PC3_imputation, PC4_imputation) %>%
+  dplyr::rename(PC1_imputed = PC1_imputation, PC2_imputed = PC2_imputation,
+                PC3_imputed = PC3_imputation, PC4_imputed = PC4_imputation)
 
-model_data <- merge(model_data, benthic_PCA, by = "SurveyID", all=T)
+model_data <- merge(model_data, benthic_PCA, by = "SurveyID", all.x=T)
 
-#####################################
-## IMPORT AND ATTACH AESTHETIC DATA #
-#####################################
+benthic_categories <- read_rds("outputs/RLS_benthic_data_imputed.rds") %>%
+  select(-c(SiteCode, SiteLongitude, SiteLatitude))
 
-aesthetic_survey_data <- read.csv("outputs/survey_aesth.csv")
-
-model_data <- merge(model_data, aesthetic_survey_data, by="SurveyID")
+model_data <- merge(model_data, benthic_categories, by = "SurveyID", all.x=T)
 
 ##########################################################
 ## IMPORT AND ATTACH COMMUNITY WEIGHTED MEAN AESTHETICS ##
@@ -73,13 +72,38 @@ trophic_composition <- readRDS("outputs/trophic_composition.rds")
 
 model_data <- merge(model_data, trophic_composition, by="SurveyID")
 
-################################################
-## IMPORT AND ATTACH TROPHIC COMPOSITION DATA ##
-################################################
+##################################################
+## IMPORT AND ATTACH TAXONOMIC COMPOSITION DATA ##
+##################################################
 
 taxo_stucture <- readRDS("outputs/taxo_structure.rds")
 
 model_data <- merge(model_data, taxo_stucture, by="SiteCode", all.x=TRUE)
+
+###################################################
+## IMPORT AND ATTACH FAMILY AND ORDER ABUNDANCES ##
+###################################################
+
+family_abundances <- readRDS("outputs/family_abundances.rds")
+
+order_abundances <- readRDS("outputs/order_abundances.rds")
+
+model_data <- merge(model_data, family_abundances, by="SiteCode", all.x=TRUE)
+
+model_data <- merge(model_data, order_abundances, by="SiteCode", all.x=TRUE)
+
+#######################################
+## CALCULATE AND ADD TOTAL ABUNDANCE ##
+#######################################
+
+sp_abund <- readRDS("outputs/sp_abund_matrix.rds")
+sp_abund_survey <- sp_abund$SurveyID
+sp_abund <- sp_abund %>%
+  column_to_rownames("SurveyID") 
+sp_abund <- data.frame(SurveyID=sp_abund_survey, abundance = rowSums(sp_abund))
+
+model_data <- merge(model_data, sp_abund, by="SurveyID", all.x=TRUE)
+
 
 #############################################
 ## IMPORT AND ATTACH PHYLOGENETIC AGE DATA ##
@@ -90,6 +114,15 @@ phylo_age_abundance <- read_rds("outputs/cwm_age_abundance.rds")
 
 model_data <- merge(model_data, phylo_age_occurence, by="SurveyID")
 model_data <- merge(model_data, phylo_age_abundance, by="SurveyID")
+
+
+#####################################
+## IMPORT AND ATTACH AESTHETIC DATA #
+#####################################
+
+aesthetic_survey_data <- read.csv("outputs/survey_aesth.csv")
+
+model_data <- merge(model_data, aesthetic_survey_data, by="SurveyID")
 
 ############################
 ## HOW MUCH MISSING DATA? ##
@@ -141,6 +174,7 @@ for(i in 1:ncol(num_vars)){
 # Check minimum values
 dplyr::summarise(model_data,
                  dplyr::across(c(nb_species, taxo_entropy, 
+                                 abundance,
                                  phylo_richness,
                                  gravtot2, wave_energy, 
                                  BO_phosphate, BO_nitrate,
@@ -150,7 +184,7 @@ dplyr::summarise(model_data,
                                min, na.rm=TRUE))
 # Transform data
 model_data <- dplyr::mutate(model_data,
-                            dplyr::across(c(nb_species, taxo_entropy, 
+                            dplyr::across(c(nb_species, taxo_entropy, abundance,
                                             gravtot2, wave_energy, 
                                             BO_phosphate, BO_nitrate,
                                             NPP_mean, Biomass,
@@ -160,6 +194,13 @@ model_data <- dplyr::mutate(model_data,
 # CREATE ABSOLUTE VALUE OF LATITUDE
 model_data <- dplyr::mutate(model_data,
                             abs_latitude = abs(SiteLatitude))
+
+
+# ADD A DUPLICATE OF LATITUDE AND LONGITUDE 
+# TO CREATE A SCALED AND ORIGINAL VERSION
+
+model_data$Latitude_scaled <- model_data$SiteLatitude
+model_data$Longitude_scaled <- model_data$SiteLongitude
 
 #####################################################
 ## SCALE ALL THE NUMERIC PREDICTORS TO MEAN 0 SD 2 ##
@@ -182,12 +223,29 @@ standardized_data <- model_data %>%
 
 standardized_data$PC1_imputed[standardized_data$Temperature_Zone=="Temperate"] <- 0
 standardized_data$PC2_imputed[standardized_data$Temperature_Zone=="Temperate"] <- 0
+standardized_data$PC3_imputed[standardized_data$Temperature_Zone=="Temperate"] <- 0
+standardized_data$PC4_imputed[standardized_data$Temperature_Zone=="Temperate"] <- 0
+
+standardized_data$coral_imputation[standardized_data$Temperature_Zone=="Temperate"] <- 0
+standardized_data$algae_imputation[standardized_data$Temperature_Zone=="Temperate"] <- 0
+standardized_data$CCA_imputation[standardized_data$Temperature_Zone=="Temperate"] <- 0
 
 #################################
 ## SAVE SURVEY ID AS CHARACTER ##
 #################################
 
 standardized_data$SurveyID <- as.character(standardized_data$SurveyID)
+
+##################################################################
+## ERROR FOUND - MULTIPLE SITE NAMES WITH IDENTICAL COORDINATES ##
+## THESE SHOULD BE MERGED AT THE SITE LEVEL 
+##################################################################
+
+# Step 3: Merge duplicates under the first SiteCode for each coordinate pair
+standardized_data <- standardized_data %>%
+  group_by(SiteLongitude, SiteLatitude) %>%
+  mutate(SiteCode = first(SiteCode)) %>%
+  ungroup()
 
 ###################
 ## SAVE THE DATA ##

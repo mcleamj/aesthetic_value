@@ -113,6 +113,7 @@ plot(rowSums(family_log) ~ family_PCA_data$SiteLatitude) # STRONG
 ############################
 
 family_PCA <- prcomp(family_log_hellinger, scale. = FALSE)
+fviz_eig(family_PCA, addlabels = TRUE, ylim = c(0, 100))
 
 fviz_pca_var(family_PCA, col.var = "contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
@@ -137,13 +138,25 @@ family_PCA$rotation[,1] <- family_PCA$rotation[,1] * -1
 
 fviz_pca_var(family_PCA, col.var = "contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = FALSE)
+             repel = FALSE,
+             labelsize = 3) 
+
+ggsave(file=here::here("figures_tables/revised_submission/supplementary_figures",
+                       "Taxonomic_PCA.png"), 
+       device = 'png',
+       dpi = 300, 
+       units = 'in', 
+       width = 8, 
+       height = 6, 
+       bg = 'white')
 
 # SAVE THE OUTPUT
 taxo_structure <- data.frame(SiteCode = family_PCA_data$SiteCode,
-                             family_PCA$x[,1:2]) %>%
+                             family_PCA$x[,1:4]) %>%
   dplyr::rename("Taxo_PC1" = PC1,
-                "Taxo_PC2" = PC2)
+                "Taxo_PC2" = PC2,
+                "Taxo_PC3" = PC3,
+                "Taxo_PC4" = PC4)
 
 saveRDS(taxo_structure, "outputs/taxo_structure.rds")
 
@@ -152,20 +165,20 @@ saveRDS(taxo_structure, "outputs/taxo_structure.rds")
 ## REDUNDANCY ANALYSIS WITH AESTHETIC VALUE ## 
 ##############################################
 
-rda_aes <- rda(family_log_hellinger ~ family_PCA_data$log_aes)
-plot(rda_aes)
-
-rda_scores <- as.data.frame(scores(rda_aes, display = "sites"))
-rda_scores$log_aes <- family_PCA_data$log_aes
-
-ggplot(rda_scores, aes(x=RDA1, y=PC1, color=log_aes)) +
-  geom_point() +
-  scale_color_gradientn(colors = pals::jet(100))
-
-taxo_structure <- data.frame(SiteCode = family_PCA_data$SiteCode,
-           Taxo_RDA1 = rda_scores$RDA1) 
-
-saveRDS(taxo_structure, "outputs/taxo_structure.rds")
+# rda_aes <- rda(family_log_hellinger ~ family_PCA_data$log_aes)
+# plot(rda_aes)
+# 
+# rda_scores <- as.data.frame(scores(rda_aes, display = "sites"))
+# rda_scores$log_aes <- family_PCA_data$log_aes
+# 
+# ggplot(rda_scores, aes(x=RDA1, y=PC1, color=log_aes)) +
+#   geom_point() +
+#   scale_color_gradientn(colors = pals::jet(100))
+# 
+# taxo_structure <- data.frame(SiteCode = family_PCA_data$SiteCode,
+#            Taxo_RDA1 = rda_scores$RDA1) 
+# 
+# saveRDS(taxo_structure, "outputs/taxo_structure.rds")
 
 
 #########################################################

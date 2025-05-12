@@ -33,7 +33,7 @@ library(lme4)
 # ----
     
 # COMPUTE AESTHETICS ----
-  #aesthe_survey : predicted aesthe 
+  #aesthe_survey_abund : predicted aesthe 
   #aesthe_SR_survey : predicted aesthe based only on species richness
       
       surveyid_vect <- as.character(sp_pres_matrix$SurveyID)  
@@ -86,7 +86,7 @@ library(lme4)
                                 
                                 cbind.data.frame(SurveyID=surveyid_vect[i],
                                                  nb_species=nb_species,
-                                                 aesthe_survey_pres=score_presence,
+                                                 aesthe_survey_abund_pres=score_presence,
                                                  aesthe_survey_abund=score_abundance,
                                                  aesthe_SR_survey=score_SR,
                                                  nb_sp_pos_survey=nb_sp_pos_survey, 
@@ -95,7 +95,7 @@ library(lme4)
                              }, mc.cores = parallel::detectCores()-1))
       
       par(mfrow=c(1,3))
-      plot(survey_aesth$nb_species,survey_aesth$aesthe_survey_pres,
+      plot(survey_aesth$nb_species,survey_aesth$aesthe_survey_abund_pres,
            xlab="Nb Species", ylab="Aesthetic Value (Presence)")
       points(survey_aesth$nb_species, survey_aesth$aesthe_SR_survey,col=2,pch=19)
       
@@ -103,7 +103,7 @@ library(lme4)
            xlab="Nb Species", ylab="Aesthetic Value (Abundance)")
       points(survey_aesth$nb_species, survey_aesth$aesthe_SR_survey,col=2,pch=19)
       
-      plot(survey_aesth$aesthe_survey_pres,survey_aesth$aesthe_survey_abund,
+      plot(survey_aesth$aesthe_survey_abund_pres,survey_aesth$aesthe_survey_abund,
            xlab="Aesthetic Value (Presence)", ylab="Aesthetic Value (Abundance)")
       
       
@@ -227,7 +227,7 @@ library(lme4)
           
           results_list[[i]]  <- data.frame(SurveyID=surveyid_vect[i],
                            nb_species=nb_species,
-                           aesthe_survey_pres=score_presence,
+                           aesthe_survey_abund_pres=score_presence,
                            aesthe_survey_abund=score_abundance,
                            aesthe_SR_survey=score_SR,
                            nb_sp_pos_survey=nb_sp_pos_survey, 
@@ -240,6 +240,7 @@ library(lme4)
       results <- do.call(rbind, results_list)
       
       
+      ## 0.999 correlation between original and version with uncertainty
       
 
 # ---- 
@@ -259,18 +260,19 @@ library(lme4)
     ##isolate two survey with same number of species but high and low aesthetic scores
     ##will be used in fig.1b and c
     
-      temp  <- survey_aesth[which(survey_aesth$aesthe_survey > 3500),]
-      temp  <- temp[which(temp$aesthe_survey < 3600),]
-      temp  <- temp[which(temp$nb_species ==40),]
-      upsc <- temp[, c("SurveyID", "aesthe_survey", "nb_species")]
+      temp  <- survey_aesth[which(survey_aesth$aesthe_survey_abund > 5000),]
+      temp  <- temp[which(temp$aesthe_survey_abund < 5500),]
+      temp  <- temp[which(temp$nb_species ==59),]
+      n_sp <- temp$nb_species
+      upsc <- temp[, c("SurveyID", "aesthe_survey_abund", "nb_species")]
       upsc <- upsc[1,]
       
       temp <- survey_aesth[which(survey_aesth$nb_species == upsc$nb_species),]
-      lowsc <- temp[which(temp$aesthe_survey == min(temp$aesthe_survey)), c("SurveyID", "aesthe_survey", "nb_species")]
+      lowsc <- temp[which(temp$aesthe_survey_abund == min(temp$aesthe_survey_abund)), c("SurveyID", "aesthe_survey_abund", "nb_species")]
     
       ###Fig.1b
     
-        b <- ggplot(survey_aesth, ggplot2::aes(y=aesthe_survey,x = nb_species)) +
+        b <- ggplot(survey_aesth, ggplot2::aes(y=aesthe_survey_abund,x = nb_species)) +
           geom_point(col="#A0A0FA",alpha=0.5) +
           theme_bw()+
           theme(axis.text.x = element_text(size = 10),
@@ -281,10 +283,10 @@ library(lme4)
           geom_line(aes(y = aesthe_SR_survey, x = nb_species),col = "white",size=0.5)+
           labs(x = "Surveys species richness",
                y = "Survey aesthetic values")+
-          geom_point(aes(x=lowsc$nb_species,y=lowsc$aesthe_survey),colour="tomato",size=3)+
-          geom_point(aes(x=upsc$nb_species,y=upsc$aesthe_survey),colour="tomato",size=3)+
-          geom_text(x=46, y=lowsc$aesthe_survey-55, label="B",size=4,col="#7D7D7C")+
-          geom_text(x=34, y=upsc$aesthe_survey, label="A",size=4,col="#7D7D7C")
+          geom_point(aes(x=lowsc$nb_species,y=lowsc$aesthe_survey_abund),colour="tomato",size=3)+
+          geom_point(aes(x=upsc$nb_species,y=upsc$aesthe_survey_abund),colour="tomato",size=3)+
+          geom_text(x=n_sp-9, y=lowsc$aesthe_survey_abund, label="Low",size=4,col="#7D7D7C")+
+          geom_text(x=n_sp-9, y=upsc$aesthe_survey_abund, label="High",size=4,col="#7D7D7C")
         
       ###Fig.1c 
     
@@ -298,8 +300,8 @@ library(lme4)
         low_sc_effect  <-  cbind.data.frame(effect=aesthe_species$aesthe_effect[which(aesthe_species$sp_name %in% gsub("_"," ",sp_lowsc))])
         high_sc_effect <-  cbind.data.frame(effect=aesthe_species$aesthe_effect[which(aesthe_species$sp_name %in% gsub("_"," ",sp_upsc))])
         
-        low_sc_effect$score_type  <- "B"
-        high_sc_effect$score_type <- "A"
+        low_sc_effect$score_type  <- "Low"
+        high_sc_effect$score_type <- "High"
         
         comp_surv <- rbind(low_sc_effect, high_sc_effect)
         
@@ -319,7 +321,7 @@ library(lme4)
                      position = position_jitter(seed = 1, width = .1)) +
           geom_hline(yintercept=0, linetype="dashed", 
                      color = "gray", size=1)+
-          scale_x_discrete(labels = c("A", "B"))+
+          scale_x_discrete(labels = c("Low", "High"))+
           ggplot2::theme(axis.line.x  = ggplot2::element_line(linetype = "blank"),
                          axis.ticks.x = ggplot2::element_blank())
         
@@ -327,8 +329,10 @@ library(lme4)
   
           library(gridExtra)
           fig_1 <- gridExtra::arrangeGrob(b,c,ncol=2)
+          fig_1
           ggsave(file=here::here("figures_tables","fig_1.tiff"), fig_1,width = 24, height = 10, dpi = 300, units = "cm", device='tiff') 
-    
+          ggsave(file=here::here("figures_tables","fig_1.pdf"), fig_1,width = 24, height = 10, dpi = 300, units = "cm", device='pdf') 
+          
 # ----
  
   

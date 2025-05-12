@@ -118,7 +118,17 @@ trophic_PCA$rotation[,2] <- trophic_PCA$rotation[,2] * -1
 # RE PLOT PCA
 fviz_pca_var(trophic_PCA, col.var = "contrib",
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = FALSE)
+             repel = FALSE,
+             labelsize=4)
+
+ggsave(file=here::here("figures_tables/revised_submission/supplementary_figures",
+                       "trophic_PCA.png"), 
+       device = 'png',
+       dpi = 300, 
+       units = 'in', 
+       width = 8, 
+       height = 6, 
+       bg = 'white')
 
 
 ## GROUP DATA
