@@ -1,4 +1,4 @@
-Conserving the beauty of the world's reef fish communities <img src="https://raw.githubusercontent.com/FRBCesab/templates/main/logos/compendium-sticker.png" align="right" style="float:right; height:120px;"/>
+Conserving the beauty of the world's reef fish assemblages <img src="https://raw.githubusercontent.com/FRBCesab/templates/main/logos/compendium-sticker.png" align="right" style="float:right; height:120px;"/>
 =========================================================
 
 <!-- badges: start -->
@@ -26,7 +26,7 @@ Conserving the beauty of the world's reef fish communities <img src="https://raw
 
 This research compendium provides code and data used to reproduce analyses and figures of the paper: 
 
-> McLean _et al._ (2024) Conserving the beauty of the world's reef fish communities.
+> McLean _et al._ (2024) Conserving the beauty of the world's reef fish assemblages.
 
 ## Data sources
 
@@ -80,7 +80,7 @@ remotes::install_deps()
 
 Please use the following citation: 
 
-> McLean _et al._ (2024) Conserving the beauty of the world's reef fish communities. URL: <https://github.com/mcleamj/aesthetic_value/>.
+> McLean _et al._ (2024) Conserving the beauty of the world's reef fish assemblages. URL: <https://github.com/mcleamj/aesthetic_value/>.
 
 
 
